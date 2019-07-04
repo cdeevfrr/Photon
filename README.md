@@ -1,2 +1,2 @@
 # spawn
-A video game
+A video game.
