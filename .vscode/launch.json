@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Current TS file",
+            "program": "${file}",
+            "runtimeArgs": ["--nolazy"],
+            "cwd": "${workspaceFolder}",
+            "sourceMaps": true,
+            "protocol": "inspector",
+            "outFiles": ["${workspaceFolder}/tscBuild/**/*.js",],
+            "preLaunchTask": "tsc: build - tsconfig.json",
+        },
+
+        {
             "type": "pwa-chrome",
             "request": "launch",
             "name": "Chrome React",

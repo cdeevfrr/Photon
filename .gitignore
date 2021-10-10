@@ -71,6 +71,7 @@ typings/
 
 # production
 /build
+/tscBuild
 
 # misc
 .DS_Store
