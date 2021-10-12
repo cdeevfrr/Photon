@@ -1,6 +1,6 @@
 import {rescaleToLine} from './VectorToLine'
 import * as assert from 'assert'
-import {Direction} from '../shared'
+import {Direction} from '../shared/shared'
 
 
 test('convertes vector to line', () => {

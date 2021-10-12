@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix'
+import { fromVector, WorldRay } from '../shared/shared'
 export { rescaleToLine }
 
 /**
@@ -11,7 +12,7 @@ export { rescaleToLine }
  * @param vector 
  * @param scale 
  */
- function rescaleToLine(vector: vec3, scale: number){
+ function rescaleToLine(vector: vec3, scale: number) : WorldRay{
 
     // rescale the vector so that it will have scale
     // total moves in it.
@@ -34,15 +35,17 @@ export { rescaleToLine }
     
     // make lines that prioritize Z, then X, then Y
     // That way we prioritize forward, left, then up.
-    const result = []
+    const result: WorldRay = []
 
     for (const index of [2, 0, 1]){
         const sign = workingVector[index] > 0? 1 : -1
         // this is creating a 'direction' of size 1. 
         // Note that I'm just currently making directions vectors 
         //  - they will eventually be their own type.
-        const newDirection = [0,0,0]
-        newDirection[index] = sign
+        const newDirectionVector = [0,0,0]
+        newDirectionVector[index] = sign
+        const newDirection = fromVector(newDirectionVector)
+
         const numberMoves = Math.abs(workingVector[index])
         for (let i = 0; i < numberMoves; i += 1){
             result.push(newDirection)

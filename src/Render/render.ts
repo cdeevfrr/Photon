@@ -1,5 +1,9 @@
-import { canvasId } from "./commonIds";
-import { GraphNode } from "./shared"
+import { canvasId } from "../commonIds";
+import { GraphNode } from "../shared/GraphNode"
+
+const red = '#ff0000'
+const blue = '#0000ff'
+const black = '#000000'
 
 /**
  * 
@@ -26,12 +30,18 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>){
     for (let i = 0; i < nodesLong; i += 1){
         for (let j = 0; j < nodesHigh; j += 1){
             const node = inputNodeArray[i][j]
-            console.log(`Looking at node ${node}`)
-            if (node.nodeType === 0){
-                cxt.fillStyle = '#ff0000'
-            } else {
-                cxt.fillStyle = '#0000ff'
+            cxt.fillStyle = black
+            if (node === null){
+                cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
+                return
             }
+            console.log(`Looking at node ${node}`)
+            if (node.nodeContents.nodeType === 0){
+                cxt.fillStyle = red
+            }
+            if (node.nodeContents.nodeType === 1){
+                cxt.fillStyle = blue
+            } 
             cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
         }
     }
