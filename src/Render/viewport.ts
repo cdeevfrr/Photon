@@ -12,13 +12,16 @@ export { drawScene }
 // positive X is right
 // positive Y is up.
 
-const defaultLines = [
-    [[2,2,-2], [1,2,-2], [0,2,-2], [-1,2,-2], [-2,2,-2]],
-    [[2,1,-2], [1,1,-2], [0,1,-2], [-1,1,-2], [-2,1,-2]],
-    [[2,0,-2], [1,0,-2], [0,0,-2], [-1,0,-2], [-2,0,-2]],
-    [[2,-1,-2], [1,-1,-2], [0,-1,-2], [-1,-1,-2], [-2,-1,-2]],
-    [[2,-2,-2], [1,-2,-2], [0,-2,-2], [-1,-2,-2], [-2,-2,-2]],
-]
+const defaultLines: Array<Array<Array<number>>> = []
+const renderDistance = 5
+for(let y = renderDistance; y > -renderDistance - 1; y --){
+    const row = []
+    for (let x = -renderDistance; x < renderDistance + 1; x ++){
+        row.push([x, y, -renderDistance])
+    }
+    defaultLines.push(row)
+}
+
 const viewDebugLevel = 2
 
 
@@ -67,7 +70,8 @@ function traceLine(position: GraphNode, direction: WorldRay, distance: number): 
     let currentNodes = [position]
     while (distance > .5){
         const nextDirection = direction[rayIndex]
-        currentNodes = currentNodes.flatMap(node => node.adjacentNodes(nextDirection))
+        // TODO optimize this so we quit trying to render once we hit an opaque node
+        currentNodes = currentNodes.flatMap(node => node.opaque? node: node.adjacentNodes(nextDirection))
         rayIndex += 1
         rayIndex = rayIndex % direction.length 
         distance -= 1
