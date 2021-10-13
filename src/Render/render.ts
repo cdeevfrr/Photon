@@ -1,4 +1,3 @@
-import { canvasId } from "../commonIds";
 import { GraphNode } from "../shared/GraphNode"
 
 const red = '#ff0000'
@@ -7,15 +6,15 @@ const black = '#000000'
 
 /**
  * 
- * @param inputNodeArray must be square, like this:
+ * @param inputNodeArray rendered like this on the screen:
  * 
- * [ 1, 2, 3]
- * [ 4, 5, 6]
- * [ 7, 8, 9]
+ * topleft    topright
+ *    [ 1, 2, 3   ]
+ *    [ 4, 5, 6   ]
+ *    [ 7, 8, null]
  * 
  */
-export function renderScene(inputNodeArray: Array<Array<GraphNode>>){
-    const canvas = document.getElementById(canvasId) as HTMLCanvasElement
+export function renderScene(inputNodeArray: Array<Array<GraphNode>>, canvas: HTMLCanvasElement){
     const nodesLong = inputNodeArray[0].length
     const nodesHigh = inputNodeArray.length
 
@@ -31,11 +30,13 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>){
         for (let j = 0; j < nodesHigh; j += 1){
             const node = inputNodeArray[i][j]
             cxt.fillStyle = black
-            if (node === null){
+            if (!(node)){
                 cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
                 return
             }
-            console.log(`Looking at node ${JSON.stringify(node.nodeContents)}`)
+            if (node.nodeContents === null || node.nodeContents === undefined){
+                console.log(node)
+            }
             if (node.nodeContents.nodeType === 0){
                 cxt.fillStyle = red
             }

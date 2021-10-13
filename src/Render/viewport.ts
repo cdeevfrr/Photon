@@ -18,6 +18,26 @@ const defaultLines = [
     [[2,-1,-2], [1,-1,-2], [0,-1,-2], [-1,-1,-2], [-2,-1,-2]],
     [[2,-2,-2], [1,-2,-2], [0,-2,-2], [-1,-2,-2], [-2,-2,-2]],
 ]
+const viewDebugLevel = 2
+
+
+function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode, canvas: HTMLCanvasElement){
+    if (viewDebugLevel > 1){
+        console.log(`Rendering from node ${position.nodeContents.extraData} with pitch ${pitchDegrees} and yaw ${yawDegrees}`)
+    }
+    const rays: Array<Array<WorldRay>> = makeLines(pitchDegrees, yawDegrees)
+    const nodes: Array<Array<Array<GraphNode>>> = 
+      rays.map(row => 
+          row.map( ray =>
+              traceLine(position, ray, ray.length) 
+          )
+      )
+    // TODO may later handle rendering with multiple out edges
+    // For now, just take the first visible node.
+    const individualNodes = nodes.map(row => row.map(nodes => nodes[0]))
+
+    renderScene(individualNodes, canvas)
+}
 
 /**
  * Given camera orientation information, create lines
@@ -42,7 +62,9 @@ function makeLines(pitchDegrees: number, yawDegrees: number){
 
             const distance = vector.reduce((x, y) => Math.abs(x) + Math.abs(y))
             const result = rescaleToLine(ray, distance)
-            console.log(`Rendered default line ${vector} with oriented line ${ray} and got line ${result}`)
+            if (viewDebugLevel > 10){
+                console.log(`Rendered default line ${vector} with oriented line ${ray} and got line ${result}`)
+            }
             return result
         })
     })
@@ -59,19 +81,4 @@ function traceLine(position: GraphNode, direction: WorldRay, distance: number): 
         distance -= 1
     }
     return currentNodes
-}
-
-function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode){
-    const rays: Array<Array<WorldRay>> = makeLines(pitchDegrees, yawDegrees)
-    const nodes: Array<Array<Array<GraphNode>>> = 
-      rays.map(row => 
-          row.map( ray =>
-              traceLine(position, ray, ray.length) 
-          )
-      )
-    // TODO may later handle rendering with multiple out edges
-    // For now, just take the first visible node.
-    const individualNodes = nodes.map(row => row.map(nodes => nodes[0]))
-
-    renderScene(individualNodes)
 }
