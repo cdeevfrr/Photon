@@ -2,7 +2,8 @@ import {vec3} from 'gl-matrix'
 import { GraphNode } from './GraphNode'
 
 export type NodeContents = {
-    nodeType: number
+    nodeType: number,
+    extraData?: any,
 }
 
 export type GraphEdge = {
@@ -10,12 +11,12 @@ export type GraphEdge = {
 }
 
 export enum Direction {
-    forward,
-    backward,
-    up,
-    down,
-    left ,
-    right,
+    forward = 'f',
+    backward = 'b',
+    up = 'u',
+    down = 'd',
+    left = 'l' ,
+    right = 'r',
 }
 
 /**
@@ -54,10 +55,6 @@ const opposites = {
 }
 export function opposite(d: Direction){
     return opposites[d]
-}
-
-export type nodeContents = {
-    nodeType: number
 }
 
 export type WorldRay = Array<Direction>

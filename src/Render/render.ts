@@ -2,7 +2,7 @@ import { canvasId } from "../commonIds";
 import { GraphNode } from "../shared/GraphNode"
 
 const red = '#ff0000'
-const blue = '#0000ff'
+const blue = '#6060ff'
 const black = '#000000'
 
 /**
@@ -35,7 +35,7 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>){
                 cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
                 return
             }
-            console.log(`Looking at node ${node}`)
+            console.log(`Looking at node ${JSON.stringify(node.nodeContents)}`)
             if (node.nodeContents.nodeType === 0){
                 cxt.fillStyle = red
             }
@@ -43,6 +43,9 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>){
                 cxt.fillStyle = blue
             } 
             cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
+
+            cxt.fillStyle = black
+            cxt.fillText(node.nodeContents.extraData,j * nodeLength, i * nodeHeight + 10)
         }
     }
 }

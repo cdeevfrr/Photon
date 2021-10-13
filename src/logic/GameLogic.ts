@@ -11,8 +11,11 @@ centerNode.adjacentNodes(Direction.forward)[0].nodeContents.nodeType = 1
 
 function mainLoop() {
     const startingNode = centerNode.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0]
+    let pitch = 0
+    let yaw = 0
+    console.log(`Rendering from node ${startingNode.nodeContents.extraData} with pitch ${pitch} and yaw ${yaw}`)
     drawScene(
-        0, 0, startingNode
+        pitch, yaw, startingNode
     )
     // TODO register mouse listener
 }
@@ -30,6 +33,7 @@ function gridOfSize(n: number): GraphNode{
             for(let k = 0; k < totalNodes; k ++){
                 // create grid[i][j][k] and attach it to its 3 earlier neighbors
                 resultArray[i][j][k] = new GraphNode()
+                resultArray[i][j][k].nodeContents.extraData = `(${i},${j},${k})`
                 if (i%2 === 0){
                     resultArray[i][j][k].nodeContents.nodeType = 1
                 }
