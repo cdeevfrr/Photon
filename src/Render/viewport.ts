@@ -1,4 +1,5 @@
-import { vec3, mat3, mat4 } from 'gl-matrix'
+import { vec3 } from 'gl-matrix'
+import { makeRotationMatrix } from './RotationMatrix'
 import { WorldRay } from '../shared/shared'
 import { GraphNode } from '../shared/GraphNode'
 import { renderScene } from './render'
@@ -44,17 +45,8 @@ function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode
  * for each pixel that will be displayed. 
  */
 function makeLines(pitchDegrees: number, yawDegrees: number){
-    const pitch = pitchDegrees / 180 * Math.PI
-    const yaw = yawDegrees / 180 * Math.PI
-
-    // Create a rotation matrix that will transform vectors made from the default lines into vectors pointing in the right direction.
-    const rotationMatrix4 = mat4.create()
-    mat4.identity(rotationMatrix4)
-    mat4.rotateX(rotationMatrix4, rotationMatrix4, pitch)
-    mat4.rotateY(rotationMatrix4, rotationMatrix4, yaw)
-    const rotationMatrix = mat3.create()
-    mat3.fromMat4(rotationMatrix, rotationMatrix4)
-
+    const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
+    
     return defaultLines.map(row => {
         return row.map(vector => {
             const ray = vec3.fromValues(vector[0], vector[1], vector[2])
