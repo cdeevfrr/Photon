@@ -1,3 +1,30 @@
+
+# Spawn
+A video game.
+
+# Name is actually TBD, spawn is reserved for somethign else.
+### Description
+The interesting point of this game is that it _looks_ like a 3D world, but it's not actually 3D. Instead, there's a grid/matrix/graph of nodes and edges, but they just start out as a 3D matrix of adjacencies. The point of the game is to modify which nodes are adjacent to which other nodes to create new things.
+
+Items, particles, movement, and vision all travel along these adjacencies.
+
+Things the players construct exist on/in nodes, and may be able to affect other nodes LOCALLY ONLY.
+
+Each node may have any number of out-edges in a particular direction. Ex you may have 5 out edges in the Z direction (the global 'backwards' or 'forwards' direction - note that the player's backwards may not be Z) If something tries to move in the Z direction, depending on what it is it might:
+- duplicate and one duplicate travels along each adjacency
+- pick an adjacency to travel along at random
+- some other behavior
+
+Vision is a really tricky question in this game. For now I'm using ray tracing - make a vector from player-eye pointing outward for each pixel, convert that vector to a list of directions like [up, up, left, forward], and then trace that line to see what it hits. 
+
+
+## Developing
+This repo is ABSOLUTELY in its infancy. There's a ton to develop & it's not setup for onboarding new people yet - please email or message me (cdeevfrr) directly if you want to contribute!
+
+
+# Stuff added by create-react-app
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
