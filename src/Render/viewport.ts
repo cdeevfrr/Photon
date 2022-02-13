@@ -22,6 +22,8 @@ for(let y = renderDistance; y > -renderDistance - 1; y --){
     defaultLines.push(row)
 }
 
+console.log(`Using render rays ${JSON.stringify(defaultLines)}`)
+
 const viewDebugLevel = 2
 
 

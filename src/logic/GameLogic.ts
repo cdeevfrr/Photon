@@ -9,6 +9,7 @@ export { mainLoop }
 
 const centerNode: GraphNode = gridOfSize(5)
 centerNode.nodeContents.nodeType = 1
+centerNode.opaque = true
 
 centerNode.adjacentNodes(Direction.forward)[0].nodeContents.nodeType = 1
 
@@ -27,7 +28,7 @@ function mainLoop() {
     const currentFractionalPosition = vec3.create()
 
     let pitch = 0
-    let yaw = -150
+    let yaw = 0
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
 
     drawScene(pitch, yaw, currentPosition, canvas)
@@ -112,9 +113,6 @@ function gridOfSize(n: number): GraphNode{
                 // create grid[i][j][k] and attach it to its 3 earlier neighbors
                 resultArray[i][j][k] = new GraphNode()
                 resultArray[i][j][k].nodeContents.extraData = `(${i},${j},${k})`
-                if (i%2 === 0){
-                    resultArray[i][j][k].nodeContents.nodeType = 1
-                }
                 if (i > 0){
                     resultArray[i][j][k].addAdjacency(Direction.left,resultArray[i-1][j][k])
                 }
