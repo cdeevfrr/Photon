@@ -37,6 +37,53 @@ test('rounds well', () => {
     )
 });
 
+test('spreads movement out well', () => {
+    assert.deepEqual(
+        rescaleToLine([3, 3, -3], 9),
+        [
+            Direction.forward,
+            Direction.right,
+            Direction.up,
+            Direction.forward,
+            Direction.right,
+            Direction.up,
+            Direction.forward,
+            Direction.right,
+            Direction.up,
+        ]
+    )
+
+    assert.deepEqual(
+        rescaleToLine([4, 2, -2], 8),
+        [
+            Direction.right,
+            Direction.forward,
+            Direction.up,
+            Direction.right,
+            Direction.right,
+            Direction.forward,
+            Direction.up,
+            Direction.right,
+        ]
+    )
+
+    assert.deepEqual(
+        rescaleToLine([5, 3, -2], 10),
+        [
+            Direction.right,
+            Direction.up,
+            Direction.forward,
+            Direction.right,
+            Direction.right,
+            Direction.up,
+            Direction.right,
+            Direction.forward,
+            Direction.up,
+            Direction.right,
+        ]
+    )
+});
+
 // TODO right now this test returns 3 directions due to rounding issues, so it fails.
 // Correct behavior will actually return 4 directions.
 // test('drops tiny fractions', () => {
