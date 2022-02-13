@@ -100,7 +100,7 @@ function mainLoop() {
 
 
 /**
- * Construct an array of (2n + 1) by (2n + 1) nodes, 
+ * Construct a 3D array of (2n + 1) by (2n + 1) by (2n + 1) nodes, 
  * and return the one at the center.
  * @param n 
  */

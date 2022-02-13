@@ -67,12 +67,21 @@ function makeLines(pitchDegrees: number, yawDegrees: number){
     })
 }
 
+/** Follow this line (worldRay, a list of Directions), in parallel if a single direction connects out to more than 1 node.
+ * @param position 
+ * @param direction 
+ * @param distance 
+ * @returns 
+ */
 function traceLine(position: GraphNode, direction: WorldRay, distance: number): Array<GraphNode>{
     let rayIndex = 0
     let currentNodes = [position]
     while (distance > .5){
         const nextDirection = direction[rayIndex]
         // TODO optimize this so we quit trying to render once we hit an opaque node
+        // Note that we stay 'stuck' inside opaque nodes - not in the node before an opaque node. This
+        // ensures that we don't, say, have light fail to pass through a node going forward, but then just
+        // go left at the next timestep - the opaque node has 'absorbed' the light.
         currentNodes = currentNodes.flatMap(node => node.opaque? node: node.adjacentNodes(nextDirection))
         rayIndex += 1
         rayIndex = rayIndex % direction.length 
