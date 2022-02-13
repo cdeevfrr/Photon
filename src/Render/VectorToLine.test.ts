@@ -7,9 +7,9 @@ test('convertes vector to line', () => {
     assert.deepEqual(
         rescaleToLine([1, 2, -1], 4),
         [
+            Direction.up, 
             Direction.forward, 
             Direction.right, 
-            Direction.up, 
             Direction.up
         ]
     )
@@ -17,9 +17,9 @@ test('convertes vector to line', () => {
     assert.deepEqual(
         rescaleToLine([2, 4, -2], 4),
         [
+            Direction.up, 
             Direction.forward, 
             Direction.right, 
-            Direction.up, 
             Direction.up
         ]
     )
@@ -29,10 +29,10 @@ test('rounds well', () => {
     assert.deepEqual(
         rescaleToLine([5, 2, -1], 4),
         [
-            Direction.right,  // could also be direction.forward, close enough.
+            Direction.right,
+            Direction.up,
             Direction.right, 
             Direction.right, 
-            Direction.up
         ]
     )
 });
@@ -74,10 +74,10 @@ test('spreads movement out well', () => {
             Direction.up,
             Direction.forward,
             Direction.right,
-            Direction.right,
             Direction.up,
             Direction.right,
             Direction.forward,
+            Direction.right,
             Direction.up,
             Direction.right,
         ]
