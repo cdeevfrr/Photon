@@ -32,7 +32,7 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>, canvas: HTM
             cxt.fillStyle = black
             if (!(node)){
                 cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
-                return
+                continue;
             }
             if (node.nodeContents === null || node.nodeContents === undefined){
                 console.log(node)
