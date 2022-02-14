@@ -1,7 +1,7 @@
 import { drawScene } from "../Render/viewport"
 import { GraphNode } from "../shared/GraphNode"
 import { Direction, fromVector } from "../shared/shared"
-import { canvasId } from "../commonIds"
+import { canvasId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
 import { gridOfSize } from "../shared/GraphNodeHelpers"
@@ -32,6 +32,7 @@ function mainLoop() {
     let pitch = 0
     let yaw = 0
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
+    const positionIndicator = document.getElementById(positionElementId) as HTMLElement
 
     drawScene(pitch, yaw, currentPosition, canvas)
 
@@ -49,6 +50,7 @@ function mainLoop() {
 
     function movePlayer(direction: Array<number>){
         currentPosition = currentPosition.adjacentNodes(fromVector(direction))[0]
+        positionIndicator.innerText = `Current Position: ${currentPosition.nodeContents.extraData}`
         drawScene(pitch, yaw, currentPosition, canvas)
     }
 
