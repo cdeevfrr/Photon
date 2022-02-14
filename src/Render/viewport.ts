@@ -4,7 +4,9 @@ import { WorldRay } from '../shared/shared'
 import { GraphNode } from '../shared/GraphNode'
 import { renderScene } from './render'
 import { rescaleToLine } from './VectorToLine'
-export { drawScene }
+export { drawScene, testInternals }
+
+const testInternals = {findNodes}
 
 
 // https://learnopengl.com/Getting-started/Camera
@@ -12,6 +14,7 @@ export { drawScene }
 // positive X is right
 // positive Y is up.
 
+// This type could probably be Array<Array<Vector>> instead.
 const defaultLines: Array<Array<Array<number>>> = []
 const renderDistance = 5
 for(let y = renderDistance; y > -renderDistance - 1; y --){
@@ -21,13 +24,20 @@ for(let y = renderDistance; y > -renderDistance - 1; y --){
     }
     defaultLines.push(row)
 }
+const viewDebugLevel = 0
 
-console.log(`Using render rays ${JSON.stringify(defaultLines)}`)
+if (viewDebugLevel > 1){
+    console.log(`Using render rays ${JSON.stringify(defaultLines)}`)
+}
 
-const viewDebugLevel = 2
 
 
 function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode, canvas: HTMLCanvasElement){
+    const individualNodes = findNodes(pitchDegrees, yawDegrees, position)
+    renderScene(individualNodes, canvas)
+}
+
+function findNodes(pitchDegrees: number, yawDegrees: number, position: GraphNode){
     if (viewDebugLevel > 1){
         console.log(`Rendering from node ${position.nodeContents.extraData} with pitch ${pitchDegrees} and yaw ${yawDegrees}`)
     }
@@ -40,9 +50,7 @@ function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode
       )
     // TODO may later handle rendering with multiple out edges
     // For now, just take the first visible node.
-    const individualNodes = nodes.map(row => row.map(nodes => nodes[0]))
-
-    renderScene(individualNodes, canvas)
+    return nodes.map(row => row.map(nodes => nodes[0]))
 }
 
 /**
@@ -51,6 +59,7 @@ function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode
  */
 function makeLines(pitchDegrees: number, yawDegrees: number){
     const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
+
     
     return defaultLines.map(row => {
         return row.map(vector => {
