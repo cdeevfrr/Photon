@@ -86,3 +86,33 @@ test('respects initial position correctly', () => {
         ]
     )
 });
+
+test('Handles near-zero values gracefully', () => {
+    assert.deepEqual(
+        rescaleToLine([0.0001, 0.0001, -7], [0,0,0]),
+        [
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+        ]
+    )
+});
+
+test('Handles actual zero values gracefully', () => {
+    assert.deepEqual(
+        rescaleToLine([0, 0, -7], [0,0,0]),
+        [
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+            Direction.forward,
+        ]
+    )
+});

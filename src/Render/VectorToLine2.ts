@@ -52,7 +52,7 @@ const epsilon = 0.00001
  * @param vector 
  * @param position 
  */
-function rescaleToLine(vector: vec3, position: vec3) : WorldRay{
+function rescaleToLine(vector: vec3, originalPosition: vec3) : WorldRay{
     // TODO optimization: This would probably benefit from memorization, 
     // since we'll be doing the same calculation over and over.
     // Come up with some kind canonical form 
@@ -61,21 +61,18 @@ function rescaleToLine(vector: vec3, position: vec3) : WorldRay{
 
     const result: WorldRay = []
     let travelledDistance = 0;
+    const position = vec3.create()
+    vec3.copy(position, originalPosition)
 
     // Timestep loop
     while (travelledDistance < 1 - 10*epsilon){
         // First, decide what scalar of the vector we want to travel this timestep.
 
-        
-        // In this timestep, we'll go at most far enough to finish off the whole vector.
-        // We can think of this as a 'collision' not with a face, but with the end of the vector.
-        let minScalarToCollision = 1 - travelledDistance;
-
         // In this timestep, we want to go the minimum distance needed to hit a face.
         // Examine each face separately.
-        [0,1,2].forEach(index => {
-            if (vector[index] == 0){
-                return
+        const collisionScalars = [0,1,2].map(index => {
+            if (Math.abs(vector[index]) < epsilon){ // this prevents division by 0
+                return 100
             }
 
             // We have to add epsilon before truncation because
@@ -90,17 +87,27 @@ function rescaleToLine(vector: vec3, position: vec3) : WorldRay{
             // next face in the 'index' dimension.
             const scalarForThisIndex = (targetFace - position[index]) / vector[index]
             
-            minScalarToCollision = Math.min(scalarForThisIndex, minScalarToCollision)
+            return scalarForThisIndex
         })
 
+        // In this timestep, we'll go at most far enough to finish off the whole vector.
+        const scalarForThisTimestep = Math.min(Math.min(...collisionScalars), 1 - travelledDistance);
+
+
         // Now, actually travel that scalar.
-        travelledDistance += minScalarToCollision
+        travelledDistance += scalarForThisTimestep
         const movementForThisTimestep = vec3.create()
-        vec3.scale(movementForThisTimestep, vector, minScalarToCollision)
+        vec3.scale(movementForThisTimestep, vector, scalarForThisTimestep)
         vec3.add(position, position, movementForThisTimestep);
         [0,1,2].forEach(index => {
-            // If we're currently on (or nearly on) a face
-            if (Math.abs(Math.round(position[index]) - position[index]) < epsilon){
+            // If the scalar for that index is close enough to the scalar we actually used,
+            // add that direction to the result. I first tried saying "if you're at a whole number"
+            // but your original position might be at a whole number by coincidence.
+            // TODO it's possible for us to be really close to both the Y face and the Z face, and then
+            // the Z face is picked for this timestep, but we're almost at the Y face. The next timestep
+            // might pick Y to finish off, and it feels like (?) it's possible to double-dip in the Y direction
+            // because of this. 
+            if (collisionScalars[index] - scalarForThisTimestep < epsilon){
                 result.push(fromIndexAndPositivity(index, vector[index] >= 0))
             }
         })
