@@ -40,7 +40,7 @@ function drawScene(pitchDegrees: number, yawDegrees: number, fractionalPosition:
 
 function findNodes(pitchDegrees: number, yawDegrees: number, position: GraphNode, fractionalPosition: vec3){
     if (viewDebugLevel > 1){
-        console.log(`Rendering from node ${position.nodeContents.extraData} with pitch ${pitchDegrees} and yaw ${yawDegrees}`)
+        console.log(`Rendering from node ${position.initialCoordinates} with pitch ${pitchDegrees} and yaw ${yawDegrees}`)
     }
     const rays: Array<Array<WorldRay>> = makeLines(pitchDegrees, yawDegrees, fractionalPosition)
     const nodes: Array<Array<Array<GraphNode>>> = 
@@ -91,7 +91,7 @@ function traceLine(position: GraphNode, direction: WorldRay, distance: number): 
         // Note that we stay 'stuck' inside opaque nodes - not in the node before an opaque node. This
         // ensures that we don't, say, have light fail to pass through a node going forward, but then just
         // go left at the next timestep - the opaque node has 'absorbed' the light.
-        currentNodes = currentNodes.flatMap(node => node.opaque? node: node.adjacentNodes(nextDirection))
+        currentNodes = currentNodes.flatMap(node => node.isOpaque() ? node : node.adjacentNodes(nextDirection))
         rayIndex += 1
         rayIndex = rayIndex % direction.length 
         distance -= 1

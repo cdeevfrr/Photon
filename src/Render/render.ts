@@ -34,19 +34,18 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>, canvas: HTM
                 cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
                 continue;
             }
-            if (node.nodeContents === null || node.nodeContents === undefined){
-                console.log(node)
-            }
-            if (node.nodeContents.nodeType === 0){
+            const entitiesToRender = node.getContents()
+            if (entitiesToRender.length == 0){
                 cxt.fillStyle = red
+            } else {
+                // TODO this is just a first pass for rendering when nodes only contain blocks.
+                const keyEntity = entitiesToRender[0]
+                cxt.fillStyle = keyEntity.color
             }
-            if (node.nodeContents.nodeType === 1){
-                cxt.fillStyle = blue
-            } 
             cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
 
             cxt.fillStyle = black
-            cxt.fillText(node.nodeContents.extraData,j * nodeLength, i * nodeHeight + 10)
+            cxt.fillText(node.initialCoordinates + "",j * nodeLength, i * nodeHeight + 10)
         }
     }
 }

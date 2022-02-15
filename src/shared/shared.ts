@@ -1,10 +1,25 @@
 import {vec3} from 'gl-matrix'
-import { OperationCanceledException } from 'typescript'
 import { GraphNode } from './GraphNode'
 
-export type NodeContents = {
-    nodeType: number,
-    extraData?: any,
+/**
+ * Unline minecraft entities, in this game blocks and moving things are both 'stuff that can go inside nodes'. They're both entities.
+ * 
+ * If there are some performance optimizations minecraft made based on the distinction, we'll just let entities declare themselves to be subject to those same optimizations 
+ *   (however, I suspect that those optimizations were based on linear algebra and won't apply here)
+ */
+export type Entity = {
+    opaque: boolean,
+    color: Color,
+}
+
+export enum Color{
+    blue = '#6060ff',
+    green = '#60ff60',
+}
+
+export interface Block extends Entity{
+    blockTypeId: number,
+    blockId: number,
 }
 
 export type GraphEdge = {
