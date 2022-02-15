@@ -9,7 +9,7 @@ import { gridOfSize } from "../shared/GraphNodeHelpers"
 export { mainLoop }
 
 
-const centerNode: GraphNode = gridOfSize(10)
+const centerNode: GraphNode = gridOfSize(20)
 
 const centerBlock: Block = {
     blockTypeId: 1,
@@ -33,7 +33,7 @@ const keyDirections: {[key: string]: Array<number>} = {
     d: [1, 0, 0],
     w: [0,0,-1],
 }
-const moveSpeed = .2
+const moveSpeed = .5
 const yawSpeed = .05
 const pitchSpeed = .05
 

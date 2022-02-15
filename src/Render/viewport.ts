@@ -16,7 +16,7 @@ const testInternals = {findNodes}
 
 // This type could probably be Array<Array<Vector>> instead.
 const defaultLines: Array<Array<Array<number>>> = []
-const renderDistance = 7
+const renderDistance = 12
 const viewportlength = renderDistance - 2
 for(let y = viewportlength; y > -viewportlength - 1; y --){
     const row = []

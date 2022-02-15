@@ -15,6 +15,8 @@ export type Entity = {
 export enum Color{
     blue = '#6060ff',
     green = '#60ff60',
+    red = '#ff0000',
+    black = '#000000',
 }
 
 export interface Block extends Entity{
