@@ -21,7 +21,7 @@ const keyDirections: {[key: string]: Array<number>} = {
     d: [1, 0, 0],
     w: [0,0,-1],
 }
-const moveSpeed = 1
+const moveSpeed = .2
 const yawSpeed = .05
 const pitchSpeed = .05
 
@@ -34,7 +34,7 @@ function mainLoop() {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
     const positionIndicator = document.getElementById(positionElementId) as HTMLElement
 
-    drawScene(pitch, yaw, currentPosition, canvas)
+    drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
 
     function mouseMoveListener(event: MouseEvent){
         yaw += event.movementX * yawSpeed 
@@ -44,14 +44,14 @@ function mainLoop() {
         // These next two aren't necessary, just convenient for debugging.
         if (yaw > 181) {yaw -= 360}
         if (yaw < -181) {yaw += 360}
-        drawScene(pitch, yaw, currentPosition, canvas)
+        drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
         event.stopPropagation()
     }
 
     function movePlayer(direction: Array<number>){
         currentPosition = currentPosition.adjacentNodes(fromVector(direction))[0]
         positionIndicator.innerText = `Current Position: ${currentPosition.nodeContents.extraData}`
-        drawScene(pitch, yaw, currentPosition, canvas)
+        drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
     }
 
     function keyPressListener(event: KeyboardEvent){

@@ -3,7 +3,7 @@ import { makeRotationMatrix } from './RotationMatrix'
 import { WorldRay } from '../shared/shared'
 import { GraphNode } from '../shared/GraphNode'
 import { renderScene } from './render'
-import { rescaleToLine } from './VectorToLine'
+import { rescaleToLine } from './VectorToLine2'
 export { drawScene, testInternals }
 
 const testInternals = {findNodes}
@@ -16,10 +16,11 @@ const testInternals = {findNodes}
 
 // This type could probably be Array<Array<Vector>> instead.
 const defaultLines: Array<Array<Array<number>>> = []
-const renderDistance = 5
-for(let y = renderDistance; y > -renderDistance - 1; y --){
+const renderDistance = 7
+const viewportlength = renderDistance - 2
+for(let y = viewportlength; y > -viewportlength - 1; y --){
     const row = []
-    for (let x = -renderDistance; x < renderDistance + 1; x ++){
+    for (let x = -viewportlength; x < viewportlength + 1; x ++){
         row.push([x, y, -renderDistance])
     }
     defaultLines.push(row)
@@ -32,16 +33,16 @@ if (viewDebugLevel > 1){
 
 
 
-function drawScene(pitchDegrees: number, yawDegrees: number, position: GraphNode, canvas: HTMLCanvasElement){
-    const individualNodes = findNodes(pitchDegrees, yawDegrees, position)
+function drawScene(pitchDegrees: number, yawDegrees: number, fractionalPosition: vec3, position: GraphNode, canvas: HTMLCanvasElement){
+    const individualNodes = findNodes(pitchDegrees, yawDegrees, position, fractionalPosition)
     renderScene(individualNodes, canvas)
 }
 
-function findNodes(pitchDegrees: number, yawDegrees: number, position: GraphNode){
+function findNodes(pitchDegrees: number, yawDegrees: number, position: GraphNode, fractionalPosition: vec3){
     if (viewDebugLevel > 1){
         console.log(`Rendering from node ${position.nodeContents.extraData} with pitch ${pitchDegrees} and yaw ${yawDegrees}`)
     }
-    const rays: Array<Array<WorldRay>> = makeLines(pitchDegrees, yawDegrees)
+    const rays: Array<Array<WorldRay>> = makeLines(pitchDegrees, yawDegrees, fractionalPosition)
     const nodes: Array<Array<Array<GraphNode>>> = 
       rays.map(row => 
           row.map( ray =>
@@ -57,7 +58,7 @@ function findNodes(pitchDegrees: number, yawDegrees: number, position: GraphNode
  * Given camera orientation information, create lines
  * for each pixel that will be displayed. 
  */
-function makeLines(pitchDegrees: number, yawDegrees: number){
+function makeLines(pitchDegrees: number, yawDegrees: number, fractionalPosition: vec3){
     const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
 
     
@@ -66,8 +67,7 @@ function makeLines(pitchDegrees: number, yawDegrees: number){
             const ray = vec3.fromValues(vector[0], vector[1], vector[2])
             vec3.transformMat3(ray, ray, rotationMatrix)
 
-            const distance = vector.reduce((x, y) => Math.abs(x) + Math.abs(y))
-            const result = rescaleToLine(ray, distance)
+            const result = rescaleToLine(ray, fractionalPosition)
             if (viewDebugLevel > 10){
                 console.log(`Rendered default line ${vector} with oriented line ${ray} and got line ${result}`)
             }

@@ -1,4 +1,5 @@
 import * as assert from 'assert'
+import { GraphNode } from '../shared/GraphNode'
 import { gridOfSize } from '../shared/GraphNodeHelpers'
 import { Direction } from '../shared/shared'
 import { testInternals } from './viewport'
@@ -15,7 +16,7 @@ test('renders expected corners from starting point', () => {
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(0, 0, gridCenterNode)
+    const view = findNodes(0, 0, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
         view[10][0].nodeContents.extraData,
@@ -35,11 +36,12 @@ test('renders expected corners from moving a bit', () => {
     const gridCenterNode = gridOfSize(6)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(0, 0, gridCenterNode
+    const view = findNodes(0, 0, backTwoSteps(gridCenterNode)
         .adjacentNodes(Direction.backward)[0]
         .adjacentNodes(Direction.backward)[0]
         .adjacentNodes(Direction.down)[0]
-        .adjacentNodes(Direction.left)[0]
+        .adjacentNodes(Direction.left)[0],
+        [0,0,0]
         )
 
     assert.deepEqual(
@@ -60,7 +62,7 @@ test('renders from turning left 90 degrees', () => {
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(0, -90, gridCenterNode)
+    const view = findNodes(0, -90, takeSteps(gridCenterNode, Direction.right, 2), [0,0,0])
 
     assert.deepEqual(
         view[0][0].nodeContents.extraData,
@@ -80,7 +82,7 @@ test('renders from turning right 90 degrees', () => {
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(0, 90, gridCenterNode)
+    const view = findNodes(0, 90, takeSteps(gridCenterNode, Direction.left, 2), [0,0,0])
 
     assert.deepEqual(
         view[0][0].nodeContents.extraData,
@@ -100,7 +102,7 @@ test('renders correctly from tilting up 90 degrees', () => {
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(-90, 0, gridCenterNode)
+    const view = findNodes(-90, 0, takeSteps(gridCenterNode, Direction.down, 2), [0,0,0])
 
     assert.deepEqual(
         view[10][0].nodeContents.extraData,
@@ -120,7 +122,7 @@ test('renders correctly from tilting down 90 degrees', () => {
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(90, 0, gridCenterNode)
+    const view = findNodes(90, 0, takeSteps(gridCenterNode, Direction.up, 2), [0,0,0])
 
     assert.deepEqual(
         view[10][0].nodeContents.extraData,
@@ -140,11 +142,11 @@ test('renders correctly from tilting right 45 degrees', () => {
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(0, 45, gridCenterNode)
+    const view = findNodes(0, 45, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
         view[5][5].nodeContents.extraData,
-        `(8,5,3)` 
+        `(9,5,3)` 
     )
 })
 
@@ -152,11 +154,11 @@ test('renders correctly from tilting up 45 degrees and right 45 degrees', () => 
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(-45, 45, gridCenterNode)
+    const view = findNodes(-45, 45, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
         view[5][5].nodeContents.extraData,
-        `(6,7,4)` 
+        `(8,9,4)` 
     )
 })
 
@@ -164,11 +166,11 @@ test('renders correctly from tilting up 45 degrees and right 90 degrees', () => 
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(-45, 90, gridCenterNode)
+    const view = findNodes(-45, 90, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
         view[5][5].nodeContents.extraData,
-        `(8,8,5)` 
+        `(9,9,7)` 
     )
 })
 
@@ -181,7 +183,7 @@ test('renders correctly from tilting up 90 degrees and right 90 degrees', () => 
     const gridCenterNode = gridOfSize(5)
     //TODO add const renderDistance = 5
     
-    const view = findNodes(-90, 90, gridCenterNode)
+    const view = findNodes(-90, 90, takeSteps(gridCenterNode, Direction.down, 2), [0,0,0])
 
     assert.deepEqual(
         view[5][5].nodeContents.extraData,
@@ -196,3 +198,14 @@ test('renders correctly from tilting up 90 degrees and right 90 degrees', () => 
         `(0,10,0)` 
     )
 })
+
+function backTwoSteps(node: GraphNode){
+    return node.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0]
+}
+
+function takeSteps(node: GraphNode, d: Direction, numSteps: number ): GraphNode {
+    if (numSteps == 0){
+        return node
+    }
+    return takeSteps(node.adjacentNodes(d)[0], d, numSteps - 1)
+}
