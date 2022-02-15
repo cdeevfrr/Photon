@@ -1,4 +1,5 @@
 import {vec3} from 'gl-matrix'
+import { OperationCanceledException } from 'typescript'
 import { GraphNode } from './GraphNode'
 
 export type NodeContents = {
@@ -43,6 +44,31 @@ export function fromVector(vector: vec3 | number[]): Direction {
         return Direction.forward
     }
     throw new Error(`Cannot find direction for vector ${vector}, are you sure it's a unit vector?`)
+}
+
+export function fromIndexAndPositivity(index: number, positive: boolean): Direction{
+    if (index == 0){
+        if (positive){
+            return Direction.right
+        } else {
+            return Direction.left
+        }
+    }
+    if (index == 1){
+        if (positive){
+            return Direction.up
+        } else {
+            return Direction.down
+        }
+    }
+    if (index == 2){
+        if (positive){
+            return Direction.backward
+        } else {
+            return Direction.forward
+        }
+    }
+    throw new Error(`Attempted to find a direction for index ${index} and positivity ${positive}`)
 }
 
 const opposites = {
