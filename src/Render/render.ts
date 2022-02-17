@@ -1,8 +1,5 @@
 import { GraphNode } from "../shared/GraphNode"
-
-const red = '#ff0000'
-const blue = '#6060ff'
-const black = '#000000'
+import { Color } from "../shared/shared"
 
 /**
  * 
@@ -26,27 +23,28 @@ export function renderScene(inputNodeArray: Array<Array<GraphNode>>, canvas: HTM
 
     const cxt = canvas.getContext("2d")!
 
+    cxt.clearRect(0,0,canvasLength, canvasHeight)
+
     for (let i = 0; i < nodesLong; i += 1){
         for (let j = 0; j < nodesHigh; j += 1){
             const node = inputNodeArray[i][j]
-            cxt.fillStyle = black
+            cxt.fillStyle = Color.black
             if (!(node)){
                 cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
                 continue;
             }
-            if (node.nodeContents === null || node.nodeContents === undefined){
-                console.log(node)
+            const entitiesToRender = node.getContents()
+            if (entitiesToRender.length == 0){
+                cxt.fillStyle = Color.red
+            } else {
+                // TODO this is just a first pass for rendering when nodes only contain blocks.
+                const keyEntity = entitiesToRender[0]
+                cxt.fillStyle = keyEntity.color
             }
-            if (node.nodeContents.nodeType === 0){
-                cxt.fillStyle = red
-            }
-            if (node.nodeContents.nodeType === 1){
-                cxt.fillStyle = blue
-            } 
             cxt.fillRect(j * nodeLength, i * nodeHeight, nodeLength, nodeHeight)
 
-            cxt.fillStyle = black
-            cxt.fillText(node.nodeContents.extraData,j * nodeLength, i * nodeHeight + 10)
+            // cxt.fillStyle = Color.black
+            // cxt.fillText(node.initialCoordinates + "",j * nodeLength, i * nodeHeight + 10)
         }
     }
 }

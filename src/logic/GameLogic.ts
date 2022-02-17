@@ -1,6 +1,6 @@
 import { drawScene } from "../Render/viewport"
 import { GraphNode } from "../shared/GraphNode"
-import { Direction, fromVector } from "../shared/shared"
+import { Direction, fromVector, Block, Color } from "../shared/shared"
 import { canvasId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
@@ -9,11 +9,23 @@ import { gridOfSize } from "../shared/GraphNodeHelpers"
 export { mainLoop }
 
 
-const centerNode: GraphNode = gridOfSize(10)
-centerNode.nodeContents.nodeType = 1
-centerNode.opaque = true
+const centerNode: GraphNode = gridOfSize(20)
 
-centerNode.adjacentNodes(Direction.forward)[0].nodeContents.nodeType = 1
+const centerBlock: Block = {
+    blockTypeId: 1,
+    blockId: 1,
+    opaque: true,
+    color: Color.blue
+} 
+centerNode.addContents(centerBlock)
+
+const centerBlockMinusOneZ: Block = {
+    blockTypeId: 1,
+    blockId: 2,
+    opaque: true,
+    color: Color.green
+}
+centerNode.adjacentNodes(Direction.forward)[0].addContents(centerBlockMinusOneZ)
 
 const keyDirections: {[key: string]: Array<number>} = {
     a: [-1, 0, 0],
@@ -21,7 +33,7 @@ const keyDirections: {[key: string]: Array<number>} = {
     d: [1, 0, 0],
     w: [0,0,-1],
 }
-const moveSpeed = .2
+const moveSpeed = .5
 const yawSpeed = .05
 const pitchSpeed = .05
 
@@ -50,7 +62,7 @@ function mainLoop() {
 
     function movePlayer(direction: Array<number>){
         currentPosition = currentPosition.adjacentNodes(fromVector(direction))[0]
-        positionIndicator.innerText = `Current Position: ${currentPosition.nodeContents.extraData}`
+        positionIndicator.innerText = `Current Position: ${currentPosition.initialCoordinates}`
         drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
     }
 
@@ -77,7 +89,7 @@ function mainLoop() {
                 direction[index] = fractionalAmount > 0? 1 : -1
                 movePlayer(direction)
                 currentFractionalPosition[index] -= direction[index]
-                console.log(`Moved the player to ${currentPosition.nodeContents.extraData}. Fractional position: ${currentFractionalPosition}`)
+                console.log(`Moved the player to ${currentPosition.initialCoordinates}. Fractional position: ${currentFractionalPosition}`)
             }
         }
     }

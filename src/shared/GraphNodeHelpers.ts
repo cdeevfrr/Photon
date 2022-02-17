@@ -15,8 +15,7 @@ export {gridOfSize}
         for(let j = 0; j < totalNodes; j ++){
             for(let k = 0; k < totalNodes; k ++){
                 // create grid[i][j][k] and attach it to its 3 earlier neighbors
-                resultArray[i][j][k] = new GraphNode()
-                resultArray[i][j][k].nodeContents.extraData = `(${i},${j},${k})`
+                resultArray[i][j][k] = new GraphNode([i,j,k])
                 if (i > 0){
                     resultArray[i][j][k].addAdjacency(Direction.left,resultArray[i-1][j][k])
                 }

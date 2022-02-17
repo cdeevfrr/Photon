@@ -19,16 +19,16 @@ test('renders expected corners from starting point', () => {
     const view = findNodes(0, 0, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(0,0,0)` 
+        view[10][0].initialCoordinates,
+        [0,0,0] 
     )
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(0,10,0)` 
+        view[0][0].initialCoordinates,
+        [0,10,0] 
     )
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(5,5,0)` 
+        view[5][5].initialCoordinates,
+        [5,5,0] 
     )
 })
 
@@ -45,16 +45,16 @@ test('renders expected corners from moving a bit', () => {
         )
 
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(0,0,3)` 
+        view[10][0].initialCoordinates,
+        [0,0,3] 
     )
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(0,10,3)` 
+        view[0][0].initialCoordinates,
+        [0,10,3] 
     )
     assert.deepEqual(
-        view[0][10].nodeContents.extraData,
-        `(10,10,3)` 
+        view[0][10].initialCoordinates,
+        [10,10,3] 
     )
 })
 
@@ -65,16 +65,16 @@ test('renders from turning left 90 degrees', () => {
     const view = findNodes(0, -90, takeSteps(gridCenterNode, Direction.right, 2), [0,0,0])
 
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(0,10,10)` 
+        view[0][0].initialCoordinates,
+        [0,10,10] 
     )
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(0,5,5)` 
+        view[5][5].initialCoordinates,
+        [0,5,5] 
     )
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(0,0,10)` 
+        view[10][0].initialCoordinates,
+        [0,0,10] 
     )
 })
 
@@ -85,16 +85,16 @@ test('renders from turning right 90 degrees', () => {
     const view = findNodes(0, 90, takeSteps(gridCenterNode, Direction.left, 2), [0,0,0])
 
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(10,10,0)` 
+        view[0][0].initialCoordinates,
+        [10,10,0] 
     )
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(10,5,5)` 
+        view[5][5].initialCoordinates,
+        [10,5,5] 
     )
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(10,0,0)` 
+        view[10][0].initialCoordinates,
+        [10,0,0] 
     )
 })
 
@@ -105,16 +105,16 @@ test('renders correctly from tilting up 90 degrees', () => {
     const view = findNodes(-90, 0, takeSteps(gridCenterNode, Direction.down, 2), [0,0,0])
 
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(0,10,0)` 
+        view[10][0].initialCoordinates,
+        [0,10,0] 
     )
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(5,10,5)` 
+        view[5][5].initialCoordinates,
+        [5,10,5] 
     )
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(0,10,10)` 
+        view[0][0].initialCoordinates,
+        [0,10,10] 
     )
 })
 
@@ -125,16 +125,16 @@ test('renders correctly from tilting down 90 degrees', () => {
     const view = findNodes(90, 0, takeSteps(gridCenterNode, Direction.up, 2), [0,0,0])
 
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(0,0,10)` 
+        view[10][0].initialCoordinates,
+        [0,0,10] 
     )
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(5,0,5)` 
+        view[5][5].initialCoordinates,
+        [5,0,5] 
     )
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(0,0,0)` 
+        view[0][0].initialCoordinates,
+        [0,0,0] 
     )
 })
 
@@ -145,8 +145,8 @@ test('renders correctly from tilting right 45 degrees', () => {
     const view = findNodes(0, 45, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(9,5,3)` 
+        view[5][5].initialCoordinates,
+        [9,5,3] 
     )
 })
 
@@ -157,8 +157,8 @@ test('renders correctly from tilting up 45 degrees and right 45 degrees', () => 
     const view = findNodes(-45, 45, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(8,9,4)` 
+        view[5][5].initialCoordinates,
+        [8,9,4] 
     )
 })
 
@@ -169,8 +169,8 @@ test('renders correctly from tilting up 45 degrees and right 90 degrees', () => 
     const view = findNodes(-45, 90, backTwoSteps(gridCenterNode), [0,0,0])
 
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(9,9,7)` 
+        view[5][5].initialCoordinates,
+        [9,9,7] 
     )
 })
 
@@ -186,16 +186,16 @@ test('renders correctly from tilting up 90 degrees and right 90 degrees', () => 
     const view = findNodes(-90, 90, takeSteps(gridCenterNode, Direction.down, 2), [0,0,0])
 
     assert.deepEqual(
-        view[5][5].nodeContents.extraData,
-        `(5,10,5)` 
+        view[5][5].initialCoordinates,
+        [5,10,5] 
     )
     assert.deepEqual(
-        view[10][0].nodeContents.extraData,
-        `(10,10,0)` 
+        view[10][0].initialCoordinates,
+        [10,10,0] 
     )
     assert.deepEqual(
-        view[0][0].nodeContents.extraData,
-        `(0,10,0)` 
+        view[0][0].initialCoordinates,
+        [0,10,0] 
     )
 })
 
