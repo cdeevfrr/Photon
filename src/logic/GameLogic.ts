@@ -1,6 +1,5 @@
-import { drawScene } from "../Render/viewport"
 import { GraphNode } from "../shared/GraphNode"
-import { Direction, fromVector, Block, Color } from "../shared/shared"
+import { Direction, Block, Color } from "../shared/shared"
 import { canvasId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
@@ -41,6 +40,10 @@ const moveSpeed = .5
 const yawSpeed = .05
 const pitchSpeed = .05
 
+const clearsPerSecond = 1
+const emitsPerClear = 10
+const photonsPerEmit = 10
+
 function mainLoop() {
     const currentPosition = new Position(
         centerNode.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0],
@@ -54,10 +57,12 @@ function mainLoop() {
     positionIndicator.innerText = `Current Position: ${currentPosition.position.initialCoordinates}`
 
 
-    const photonViewport = new PhotonViewport(canvas, {photonsHigh: 7, photonsWide: 10, renderDistance: 10})
+    const photonViewport = new PhotonViewport(canvas, {photonsHigh: 7, photonsWide: 10, renderDistance: 10, decayTimeout: 1000 / clearsPerSecond / 2})
 
-    function emitAPhoton(){
-        photonViewport.emitRandomPhoton(pitch, yaw, currentPosition)
+    function emitPhotons(){
+        for (let i = 0; i < photonsPerEmit; i ++){
+            photonViewport.emitNextPhoton(pitch, yaw, currentPosition)
+        }
     }
 
     function mouseMoveListener(event: MouseEvent){
@@ -68,6 +73,7 @@ function mainLoop() {
         // These next two aren't necessary, just convenient for debugging.
         if (yaw > 181) {yaw -= 360}
         if (yaw < -181) {yaw += 360}
+        photonViewport.setLastMoveTime()
         event.stopPropagation()
     }
 
@@ -91,11 +97,11 @@ function mainLoop() {
         currentPosition.addVector(moveDirection, (g) => g.isOpaque()) // TODO rotate your pitch and yaw if there was a rotation.
         positionIndicator.innerText = `Current Position: ${currentPosition.position.initialCoordinates}`
 
+        photonViewport.setLastMoveTime()
+        event.stopPropagation()
     }
 
     let photonEmittingInterval: NodeJS.Timer | null = null
-    let fadeOutInterval: NodeJS.Timer | null = null
-
 
     /**
      * This function makes the mouse go away, and lets you hit escape to get it back.
@@ -105,8 +111,8 @@ function mainLoop() {
             console.log("Adding listeners")
             canvas.addEventListener('mousemove', mouseMoveListener, true)
             document.addEventListener('keydown', keyPressListener, true)
-            photonEmittingInterval = photonEmittingInterval || setInterval(emitAPhoton, 10)
-            fadeOutInterval = fadeOutInterval || setInterval(() => photonViewport.fadeOut(), 1000)
+
+            photonEmittingInterval = photonEmittingInterval || setInterval(emitPhotons, 1000 / (emitsPerClear * clearsPerSecond))
         } else {
             console.log("Removing listeners")
             canvas.removeEventListener('mousemove', mouseMoveListener, true)

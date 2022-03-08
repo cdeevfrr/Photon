@@ -17,6 +17,9 @@ export class PhotonViewport {
     photonsWide = 5
     renderDistance = 12
 
+    decayTimeout = 1000
+    lastMoveTime = Date.now()
+
     canvas: HTMLCanvasElement 
     cxt: CanvasRenderingContext2D
 
@@ -35,19 +38,27 @@ export class PhotonViewport {
     //   [[-1, 0,d], [0, 0,d], [1, 0,d]]
     //   [[-1,-1,d], [0,-1,d], [1,-1,d]]
     defaultLines: Array<Array<Array<number>>> = []
+
+    // A stack of of all (x,y) pairs that we pop off so that we hit every photon.
+    photonOrdering: Array<{x: number, y: number}> = []
+
+    decayTimers: {[key: number]: NodeJS.Timer} = {}
     
     constructor(canvas: HTMLCanvasElement, {
         photonsHigh, 
         photonsWide, 
-        renderDistance
+        renderDistance, 
+        decayTimeout,
     }:{
         photonsHigh?: number, 
         photonsWide?: number, 
-        renderDistance?: number
+        renderDistance?: number,
+        decayTimeout?: number
     }){
         this.photonsHigh = photonsHigh || this.photonsHigh 
         this.photonsWide = photonsWide || this.photonsWide  
         this.renderDistance = renderDistance || this.renderDistance
+        this.decayTimeout = decayTimeout || this.decayTimeout
 
         this.constructDefaultLines()
 
@@ -66,13 +77,19 @@ export class PhotonViewport {
         this.squareHeight = canvasHeight / this.photonsHigh
     }
 
-    public fadeOut(){
-        const canvasLength = this.canvas.getBoundingClientRect().width
-        const canvasHeight = this.canvas.getBoundingClientRect().height
+    public setLastMoveTime(){
+        this.lastMoveTime = Date.now()
+    }
 
-        this.cxt.globalAlpha = .2
+    public fadeOutSquare(photonx: number, photony: number){
+        this.cxt.globalAlpha = .3
         this.cxt.fillStyle = Color.black
-        this.cxt.fillRect(0,0,canvasLength, canvasHeight)
+        this.cxt.fillRect(
+            photonx * this.squareLength,
+            photony * this.squareHeight,
+            this.squareLength,
+            this.squareHeight
+            )
         this.cxt.globalAlpha = 1
     }
 
@@ -91,10 +108,7 @@ export class PhotonViewport {
         }
     }
 
-    emitRandomPhoton(pitchDegrees: number, yawDegrees: number, position: Position){
-        const photonx = Math.floor(Math.random() * this.photonsWide)
-        const photony = Math.floor(Math.random() * this.photonsHigh)
-    
+    private emitPhoton(photonx: number, photony: number, pitchDegrees: number, yawDegrees: number, position: Position){
         const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
         const defaultLine = this.defaultLines[photony][photonx]
         const ray = vec3.fromValues(defaultLine[0], defaultLine[1], defaultLine[2])
@@ -109,16 +123,78 @@ export class PhotonViewport {
                 if (c.toNode.getContents().length < 1){
                     throw new Error(`I got a collission with an empty node: ${c.toNode.initialCoordinates}`)
                 }
-                viewport.cxt.fillStyle = c.toNode.getContents()[0].color
-                viewport.cxt.fillRect(photonx * viewport.squareLength,photony * viewport.squareHeight, viewport.squareLength, viewport.squareHeight)
+                viewport.photonFinished(c.toNode.getContents()[0].color, photonx, photony)
             }, 
             onExpire: (p: Photon) => {
-                viewport.cxt.fillStyle = Color.empty
-                viewport.cxt.fillRect(photonx * viewport.squareLength,photony * viewport.squareHeight, viewport.squareLength, viewport.squareHeight)
+                viewport.photonFinished(Color.empty, photonx, photony)
             }, 
         })
         emittedPhoton.startTicks(100)
-    }  
+    }
+
+    emitNextPhoton(pitchDegrees: number, yawDegrees: number, position: Position){
+        if (this.photonOrdering.length == 0){
+            for (let x = 0; x < this.photonsWide; x ++){
+                for(let y = 0; y < this.photonsHigh; y ++){
+                    this.photonOrdering.push({x,y})
+                }
+            }
+            shuffle(this.photonOrdering)
+        }
+        const indexes = this.photonOrdering.pop() 
+        this.emitPhoton(
+            indexes!.x,
+            indexes!.y,
+            pitchDegrees,
+            yawDegrees,
+            position
+        )
+
+    }
+
+    emitRandomPhoton(pitchDegrees: number, yawDegrees: number, position: Position){
+        this.emitPhoton(
+            Math.floor(Math.random() * this.photonsWide),
+            Math.floor(Math.random() * this.photonsHigh),
+            pitchDegrees,
+            yawDegrees,
+            position
+        )
+    } 
+
+    photonFinished(c: Color, photonx: number, photony: number){
+        const photonKey = photonx + this.photonsWide * photony
+        const existingTimer = this.decayTimers[photonKey]
+        if(existingTimer){
+            clearInterval(existingTimer)
+        }
+
+        this.cxt.fillStyle = c
+        this.cxt.fillRect(
+            photonx * this.squareLength,
+            photony * this.squareHeight, 
+            this.squareLength, 
+            this.squareHeight
+        )
+
+        this.decayTimers[photonKey] = setTimeout(() => {
+            // If the player has been sitting still for 2*delayTimeout, stop fading stuff.
+            if (Date.now() - this.lastMoveTime < 2 * this.decayTimeout){
+                this.fadeOutSquare(photonx, photony)
+            }
+        }, this.decayTimeout)
+    }
+}
+
+//https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(a: Array<any>){//array,placeholder,placeholder,placeholder
+    let count = a.length
+    while(count){
+        const b = Math.random()* (count --)|0
+        const d=a[count]
+        a[count]=a[b]
+        a[b]=d
+    }
 }
 
 
