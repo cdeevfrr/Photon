@@ -5,11 +5,13 @@ import { canvasId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
 import { gridOfSize } from "../shared/GraphNodeHelpers"
+import { PhotonViewport } from "../Render/photonViewport"
+import { Position } from "../shared/Position"
 
 export { mainLoop }
 
 
-const centerNode: GraphNode = gridOfSize(20)
+const centerNode: GraphNode = gridOfSize(10)
 
 const centerBlock: Block = {
     blockTypeId: 1,
@@ -32,21 +34,31 @@ const keyDirections: {[key: string]: Array<number>} = {
     s: [0,0,1],
     d: [1, 0, 0],
     w: [0,0,-1],
+    " ": [0, 1, 0],
+    "Shift": [0, -1, 0],
 }
 const moveSpeed = .5
 const yawSpeed = .05
 const pitchSpeed = .05
 
 function mainLoop() {
-    let currentPosition = centerNode.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0]
-    const currentFractionalPosition = vec3.create()
+    const currentPosition = new Position(
+        centerNode.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0],
+        vec3.create())
 
     let pitch = 0
     let yaw = 0
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
     const positionIndicator = document.getElementById(positionElementId) as HTMLElement
 
-    drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
+    positionIndicator.innerText = `Current Position: ${currentPosition.position.initialCoordinates}`
+
+
+    const photonViewport = new PhotonViewport(canvas, {photonsHigh: 7, photonsWide: 10, renderDistance: 10})
+
+    function emitAPhoton(){
+        photonViewport.emitRandomPhoton(pitch, yaw, currentPosition)
+    }
 
     function mouseMoveListener(event: MouseEvent){
         yaw += event.movementX * yawSpeed 
@@ -56,20 +68,17 @@ function mainLoop() {
         // These next two aren't necessary, just convenient for debugging.
         if (yaw > 181) {yaw -= 360}
         if (yaw < -181) {yaw += 360}
-        drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
         event.stopPropagation()
-    }
-
-    function movePlayer(direction: Array<number>){
-        currentPosition = currentPosition.adjacentNodes(fromVector(direction))[0]
-        positionIndicator.innerText = `Current Position: ${currentPosition.initialCoordinates}`
-        drawScene(pitch, yaw, currentFractionalPosition, currentPosition, canvas)
     }
 
     function keyPressListener(event: KeyboardEvent){
         console.log(`Got an event ${event.key}`)
         // Find the vector for the direction we're moving
         const direction = keyDirections[event.key]
+        if (direction === undefined){
+            return
+        }
+
         const rotationMatrix = makeRotationMatrix(pitch, yaw)
         const moveDirection = vec3.fromValues(direction[0], direction[1], direction[2])
         vec3.transformMat3(moveDirection, moveDirection, rotationMatrix)
@@ -78,30 +87,34 @@ function mainLoop() {
         // TODO while the key is pressed, repeat the following: 
 
         // Add that vector to the current FractionalPosition vector
-        vec3.add(currentFractionalPosition, currentFractionalPosition, moveDirection)
-        console.log(`CurrentFractionalPosition: ${currentFractionalPosition}`)
 
-        // If the fractionalPosition vector has any part greater than 1, move in that direction.
-        for(const index of [2, 0, 1]){
-            const fractionalAmount = currentFractionalPosition[index]
-            if (Math.abs(fractionalAmount) >= 1){
-                const direction = [0,0,0]
-                direction[index] = fractionalAmount > 0? 1 : -1
-                movePlayer(direction)
-                currentFractionalPosition[index] -= direction[index]
-                console.log(`Moved the player to ${currentPosition.initialCoordinates}. Fractional position: ${currentFractionalPosition}`)
-            }
-        }
+        currentPosition.addVector(moveDirection, (g) => g.isOpaque()) // TODO rotate your pitch and yaw if there was a rotation.
+        positionIndicator.innerText = `Current Position: ${currentPosition.position.initialCoordinates}`
+
     }
 
+    let photonEmittingInterval: NodeJS.Timer | null = null
+    let fadeOutInterval: NodeJS.Timer | null = null
+
+
+    /**
+     * This function makes the mouse go away, and lets you hit escape to get it back.
+     */
     function pointerLockChangeListener(){
         if (document.pointerLockElement === canvas){
+            console.log("Adding listeners")
             canvas.addEventListener('mousemove', mouseMoveListener, true)
             document.addEventListener('keydown', keyPressListener, true)
+            photonEmittingInterval = photonEmittingInterval || setInterval(emitAPhoton, 10)
+            fadeOutInterval = fadeOutInterval || setInterval(() => photonViewport.fadeOut(), 1000)
         } else {
             console.log("Removing listeners")
             canvas.removeEventListener('mousemove', mouseMoveListener, true)
             document.removeEventListener('keydown', keyPressListener, true)
+            if(photonEmittingInterval){
+                clearInterval(photonEmittingInterval)
+                photonEmittingInterval = null
+            }
         }
     }
 
