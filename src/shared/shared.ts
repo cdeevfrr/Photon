@@ -17,6 +17,8 @@ export enum Color{
     green = '#60ff60',
     red = '#ff0000',
     black = '#000000',
+    empty = '#ff0000', // Note that this is red right now.
+    none = '',
 }
 
 export interface Block extends Entity{
@@ -26,6 +28,7 @@ export interface Block extends Entity{
 
 export type GraphEdge = {
     destination: GraphNode
+    inEdge?: Direction
 }
 
 export enum Direction {
@@ -35,6 +38,15 @@ export enum Direction {
     down = 'd',
     left = 'l' ,
     right = 'r',
+}
+
+const indexAndPositivity = {
+    [Direction.forward]: {index: 2, positive: false}, // forward is the negative Z direction
+    [Direction.backward]: {index: 2, positive: true},
+    [Direction.up]: {index: 1, positive: true},
+    [Direction.down]: {index: 1, positive: false},
+    [Direction.left]: {index: 0, positive: false},
+    [Direction.right]: {index: 0, positive: true},
 }
 
 /**
@@ -88,6 +100,10 @@ export function fromIndexAndPositivity(index: number, positive: boolean): Direct
     throw new Error(`Attempted to find a direction for index ${index} and positivity ${positive}`)
 }
 
+export function toIndexAndPositivity(d: Direction){
+    return indexAndPositivity[d]
+}
+
 const opposites = {
     [Direction.up]: Direction.down,
     [Direction.down]: Direction.up,
@@ -101,3 +117,7 @@ export function opposite(d: Direction){
 }
 
 export type WorldRay = Array<Direction>
+
+export function randomChoice(a: Array<any>){
+    return a[Math.floor(Math.random()*a.length)]
+}

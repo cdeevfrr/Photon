@@ -1,4 +1,4 @@
-import { Direction, GraphEdge, Entity, opposite } from "./shared"
+import { Direction, GraphEdge, Entity, opposite, randomChoice } from "./shared"
 import {vec3} from 'gl-matrix'
 
 /**
@@ -42,9 +42,13 @@ export class GraphNode{
         return this.outEdges[d].map(e => e.destination) || []
     }
 
-    addAdjacency(d: Direction, other: GraphNode): void{
+    randomOutEdge(d: Direction): GraphEdge {
+        return randomChoice(this.outEdges[d])
+    }
+
+    addAdjacency(d: Direction, other: GraphNode, inwardDirection?: Direction): void{
         this.outEdges[d].push({destination: other})
-        other.outEdges[opposite(d)].push({destination: this})
+        other.outEdges[opposite(d)].push({destination: this, inEdge: inwardDirection})
     }
 
     // TODO entities should only be able to exist in one node at a time.
@@ -68,9 +72,12 @@ export class GraphNode{
         return [...this.nodeContents]
     }
 
-    isOpaque(){
+    // It's important that nodes without anything in them be NOT opaque.
+    // Since if a node is opaque, we need to find the entities in it to draw it.
+    isOpaque(): boolean{
         if (this.opaque === undefined){
             this.opaque = this.nodeContents.some(entity => entity.opaque)
+            return this.opaque
         } else {
             return this.opaque
         }
