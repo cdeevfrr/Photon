@@ -1,32 +1,33 @@
 import { GraphNode } from "../shared/GraphNode"
 import { Direction, Block, Color } from "../shared/shared"
-import { canvasId, positionElementId } from "../commonIds"
+import { canvasId, mapId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
 import { gridOfSize } from "../GraphReading/GraphNodeHelpers"
 import { PhotonViewport } from "../Render/photonViewport"
 import { Position } from "../shared/Position"
+import { readGFGLines } from "../GraphReading/ReadGraphFromLines"
 
 export { mainLoop }
 
 
-const centerNode: GraphNode = gridOfSize(10)
+// const centerNode: GraphNode = gridOfSize(10)
 
-const centerBlock: Block = {
-    blockTypeId: 1,
-    blockId: 1,
-    opaque: true,
-    color: Color.blue
-} 
-centerNode.addContents(centerBlock)
+// const centerBlock: Block = {
+//     blockTypeId: 1,
+//     blockId: 1,
+//     opaque: true,
+//     color: Color.blue
+// } 
+// centerNode.addContents(centerBlock)
 
-const centerBlockMinusOneZ: Block = {
-    blockTypeId: 1,
-    blockId: 2,
-    opaque: true,
-    color: Color.green
-}
-centerNode.adjacentNodes(Direction.forward)[0].addContents(centerBlockMinusOneZ)
+// const centerBlockMinusOneZ: Block = {
+//     blockTypeId: 1,
+//     blockId: 2,
+//     opaque: true,
+//     color: Color.green
+// }
+// centerNode.adjacentNodes(Direction.forward)[0].addContents(centerBlockMinusOneZ)
 
 const keyDirections: {[key: string]: vec3} = {
     a: [-1, 0, 0],
@@ -45,10 +46,31 @@ const clearsPerSecond = 1
 const emitsPerClear = 10
 const photonsPerEmit = 10
 
-function mainLoop() {
+async function mainLoop() {
+
+    let mapElement = document.getElementById(mapId)
+    while (!mapElement){
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        mapElement = document.getElementById(mapId)
+    }
+    const mapData = mapElement.getAttribute("data")
+
+    if (!mapData){
+        throw new Error("Didn't get map data from the webpage!")
+    }
+    
+    const bottomLeftForwardMostNode: GraphNode = (await readGFGLines(mapData?.split("\n"))).firstNode
+    
+
+
+    console.log(`Starting at coords ${bottomLeftForwardMostNode.initialCoordinates}`)
+
     const currentPosition = new Position(
-        centerNode.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0],
-        [0.5, 0.5, 0.5])
+        bottomLeftForwardMostNode
+          .adjacentNodes(Direction.backward)[0]
+          .adjacentNodes(Direction.right)[0]
+          .adjacentNodes(Direction.up)[0]
+          ,[0.5, 0.5, 0.5])
 
     let pitch = 0
     let yaw = 0

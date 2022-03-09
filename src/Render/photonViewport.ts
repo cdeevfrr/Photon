@@ -118,10 +118,11 @@ export class PhotonViewport {
             position: position.clone(), 
             direction: ray, 
             onCollision: (c: Collision) => {
-                if (c.toNode.getContents().length < 1){
-                    throw new Error(`I got a collission with an empty node: ${c.toNode.initialCoordinates}`)
+                if (c.toNode == null){
+                    viewport.photonLeftGraph(photonx, photony)
+                } else {
+                    viewport.photonFinished(c.toNode, photonx, photony)
                 }
-                viewport.photonFinished(c.toNode, photonx, photony)
             }, 
             onExpire: (p: Photon) => {
                 viewport.photonFinished(p.position.node, photonx, photony)
@@ -159,6 +160,16 @@ export class PhotonViewport {
             position
         )
     } 
+
+    photonLeftGraph(photonx: number, photony: number){
+        this.cxt.fillStyle = Color.black
+        this.cxt.fillRect(
+            photonx * this.squareLength,
+            photony * this.squareHeight, 
+            this.squareLength, 
+            this.squareHeight
+        )
+    }
 
     photonFinished(g: GraphNode, photonx: number, photony: number){
         const photonKey = photonx + this.photonsWide * photony

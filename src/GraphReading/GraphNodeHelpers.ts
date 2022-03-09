@@ -17,13 +17,13 @@ export {gridOfSize}
                 // create grid[i][j][k] and attach it to its 3 earlier neighbors
                 resultArray[i][j][k] = new GraphNode([i,j,k])
                 if (i > 0){
-                    resultArray[i][j][k].addAdjacency(Direction.left,resultArray[i-1][j][k])
+                    resultArray[i][j][k].addSymmetricAdjacency(Direction.left,resultArray[i-1][j][k])
                 }
                 if (j > 0){
-                    resultArray[i][j][k].addAdjacency(Direction.down,resultArray[i][j-1][k])
+                    resultArray[i][j][k].addSymmetricAdjacency(Direction.down,resultArray[i][j-1][k])
                 }
                 if (k > 0){
-                    resultArray[i][j][k].addAdjacency(Direction.forward,resultArray[i][j][k-1])
+                    resultArray[i][j][k].addSymmetricAdjacency(Direction.forward,resultArray[i][j][k-1])
                 }
             }
         }

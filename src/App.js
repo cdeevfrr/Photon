@@ -1,6 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import GameView from './GameView';
+import PlaygroundMap from './PlaygroundMap';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           Edit <code>src/App.js</code> and save to reload.
         </p>
         <GameView tiles="123" entities="456"/>
+        <PlaygroundMap/>
       </header>
     </div>
   );

@@ -149,8 +149,15 @@ export class Position {
      * @param v 
      * @returns 
      */
-    private moveNode(d: Direction, haltsMovement: (g: GraphNode) => boolean, v: vec3) {
+    private moveNode(d: Direction, haltsMovement: (g: GraphNode) => boolean, v: vec3): Collision | {rotatedVector: vec3} {
         const outEdge = this.node.randomOutEdge(d)
+        if (outEdge == null){
+            return {
+                fromNode: this.node,
+                toNode: null,
+                faceOnFromNode: d,
+            }
+        }
         if (haltsMovement(outEdge.destination)){
             const collision: Collision = {
                 fromNode: this.node,

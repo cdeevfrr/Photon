@@ -13,6 +13,7 @@ import {vec3} from 'gl-matrix'
  * 
  */
 export class GraphNode{
+    // TODO this class needs an ID so that nodes can store/load correctly.
     private nodeContents: Array<Entity>
     outEdges: { [key in Direction]: Array<GraphEdge>}
     private opaque: boolean | undefined
@@ -42,13 +43,31 @@ export class GraphNode{
         return this.outEdges[d].map(e => e.destination) || []
     }
 
-    randomOutEdge(d: Direction): GraphEdge {
+    /**
+     * Pick a random outedge.
+     * If there are none in this direction, return null.
+     * @param d 
+     * @returns 
+     */
+    randomOutEdge(d: Direction): GraphEdge | null {
+        if (this.outEdges[d].length == 0){
+            return null
+        }
         return randomChoice(this.outEdges[d])
     }
 
-    addAdjacency(d: Direction, other: GraphNode, inwardDirection?: Direction): void{
-        this.outEdges[d].push({destination: other})
-        other.outEdges[opposite(d)].push({destination: this, inEdge: inwardDirection})
+    /**
+     * Add a symmetric edge in direction d, from this node to other.
+     * 
+     * If other already has an outedge in direction opposite(d), it will now have 2 out edges for d.
+     * 
+     * @param outDirection 
+     * @param other 
+     * @param othersInDirection 
+     */
+    addSymmetricAdjacency(outDirection: Direction, other: GraphNode): void{
+        this.outEdges[outDirection].push({destination: other})
+        other.outEdges[opposite(outDirection)].push({destination: this})
     }
 
     // TODO entities should only be able to exist in one node at a time.
