@@ -1,12 +1,10 @@
 import { vec3 } from 'gl-matrix'
 import { Photon } from '../Entities/Photon'
 import { Collision } from '../shared/Collision'
+import { GraphNode } from '../shared/GraphNode'
 import { Position } from '../shared/Position'
 import { Color } from '../shared/shared'
 import { makeRotationMatrix } from './RotationMatrix'
-
-
-
 
 export class PhotonViewport {
     // The screen will represent an array of nodes, from 
@@ -48,12 +46,12 @@ export class PhotonViewport {
         photonsHigh, 
         photonsWide, 
         renderDistance, 
-        decayTimeout,
+        visualDecayTimeout: decayTimeout,
     }:{
         photonsHigh?: number, 
         photonsWide?: number, 
         renderDistance?: number,
-        decayTimeout?: number
+        visualDecayTimeout?: number
     }){
         this.photonsHigh = photonsHigh || this.photonsHigh 
         this.photonsWide = photonsWide || this.photonsWide  
@@ -123,10 +121,10 @@ export class PhotonViewport {
                 if (c.toNode.getContents().length < 1){
                     throw new Error(`I got a collission with an empty node: ${c.toNode.initialCoordinates}`)
                 }
-                viewport.photonFinished(c.toNode.getContents()[0].color, photonx, photony)
+                viewport.photonFinished(c.toNode, photonx, photony)
             }, 
             onExpire: (p: Photon) => {
-                viewport.photonFinished(Color.empty, photonx, photony)
+                viewport.photonFinished(p.position.node, photonx, photony)
             }, 
         })
         emittedPhoton.startTicks(100)
@@ -162,20 +160,28 @@ export class PhotonViewport {
         )
     } 
 
-    photonFinished(c: Color, photonx: number, photony: number){
+    photonFinished(g: GraphNode, photonx: number, photony: number){
         const photonKey = photonx + this.photonsWide * photony
         const existingTimer = this.decayTimers[photonKey]
         if(existingTimer){
             clearInterval(existingTimer)
         }
 
-        this.cxt.fillStyle = c
+        if (g.getContents().length > 0){
+            this.cxt.fillStyle = g.getContents()[0].color
+        } else {
+            this.cxt.fillStyle = Color.empty
+        }
         this.cxt.fillRect(
             photonx * this.squareLength,
             photony * this.squareHeight, 
             this.squareLength, 
             this.squareHeight
         )
+
+        this.cxt.fillStyle = Color.black
+        this.cxt.fillText("" + g.initialCoordinates,photonx * this.squareLength,
+        photony * this.squareHeight + 20)
 
         this.decayTimers[photonKey] = setTimeout(() => {
             // If the player has been sitting still for 2*delayTimeout, stop fading stuff.

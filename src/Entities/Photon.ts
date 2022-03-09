@@ -4,9 +4,16 @@ import { Position } from "../shared/Position";
 import { Color } from "../shared/shared";
 
 /**
- * How many units per second a photon can move.
+ * How many euclidian units per second a photon can move.
  */
 const photonSpeed = 3
+/**
+ * How many euclidian units a photon can move before expriring
+ * Photons expire on equality (default scenario) else do one extra tick (scenario if there's rounding issues)
+ * EX if photonSpeed=2 defaultMaxDistance=4 the photon will do 2 ticks, traveling 4.
+ *    if photonSpeed=2 defaultMaxDistance=2.1 the photon will do 2 ticks, traveling 4.
+ * 
+ */
 const defaultMaxDistance = 6
 
 
@@ -60,9 +67,23 @@ export class Photon {
         this.interval = setInterval(() => this.tick(), ms)
     }
 
+    stopTicks(){
+        this.shouldTick = false
+        if (this.interval){
+            clearInterval(this.interval)
+        }
+    }
+
+    /**
+     * Move the photon forward 'photonSpeed', reporting any collisions if they happen.
+     * 
+     * If total distance is now maxDistance or more, expire this photon. 
+     * @returns 
+     */
     public async tick(){
         if (!this.shouldTick){
-            // This way, if the intervals queued up more ticks but this photon has expired, it won't do anything.
+            // This way, if the intervals queued up more ticks, but this photon has expired, it won't do anything.
+            // Should only matter if there's computational strain.
             return;
         }
 
@@ -72,27 +93,24 @@ export class Photon {
             node => (!node) || node.isOpaque()
         )
 
+
         if (collision){
             // If collision is not null, neither will remainingToAdd be.
             this.distanceTravelled += vec3.distance(remainingToAdd!, this.TickVector)
+            this.stopTicks()
             this.onCollision(collision)
 
             // TODO it's possible that you could be way behind, and the 
             // interval stacks 5 calls to tick() onto the event loop, 
             // but that first call should have cleared things. Figure out
             // how to prevent that bug.
-            if (this.interval){
-                clearInterval(this.interval)
-            }
+           
         } else {
             this.distanceTravelled += photonSpeed
             this.TickVector = this.rescaleToPhotonSpeed(lastAdded!)
-            if (this.distanceTravelled > this.maxDistance){
-                this.shouldTick = false
+            if (this.distanceTravelled >= this.maxDistance){
+                this.stopTicks()
                 this.onExpire(this)
-                if (this.interval){
-                    clearInterval(this.interval)
-                }
             }
         }
     }

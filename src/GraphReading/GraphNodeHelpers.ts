@@ -1,5 +1,5 @@
-import { GraphNode } from "./GraphNode"
-import { Direction } from "./shared"
+import { GraphNode } from "../shared/GraphNode"
+import { Direction } from "../shared/shared"
 
 export {gridOfSize}
 

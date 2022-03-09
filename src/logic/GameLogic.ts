@@ -3,7 +3,7 @@ import { Direction, Block, Color } from "../shared/shared"
 import { canvasId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
-import { gridOfSize } from "../shared/GraphNodeHelpers"
+import { gridOfSize } from "../GraphReading/GraphNodeHelpers"
 import { PhotonViewport } from "../Render/photonViewport"
 import { Position } from "../shared/Position"
 
@@ -28,7 +28,7 @@ const centerBlockMinusOneZ: Block = {
 }
 centerNode.adjacentNodes(Direction.forward)[0].addContents(centerBlockMinusOneZ)
 
-const keyDirections: {[key: string]: Array<number>} = {
+const keyDirections: {[key: string]: vec3} = {
     a: [-1, 0, 0],
     s: [0,0,1],
     d: [1, 0, 0],
@@ -36,7 +36,8 @@ const keyDirections: {[key: string]: Array<number>} = {
     " ": [0, 1, 0],
     "Shift": [0, -1, 0],
 }
-const moveSpeed = .5
+const depressedKeys = new Set<string>()
+const moveSpeed = .02
 const yawSpeed = .05
 const pitchSpeed = .05
 
@@ -47,17 +48,22 @@ const photonsPerEmit = 10
 function mainLoop() {
     const currentPosition = new Position(
         centerNode.adjacentNodes(Direction.backward)[0].adjacentNodes(Direction.backward)[0],
-        vec3.create())
+        [0.5, 0.5, 0.5])
 
     let pitch = 0
     let yaw = 0
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
     const positionIndicator = document.getElementById(positionElementId) as HTMLElement
 
-    positionIndicator.innerText = `Current Position: ${currentPosition.position.initialCoordinates}`
+    positionIndicator.innerText = `Current Position: ${currentPosition.node.initialCoordinates}`
 
 
-    const photonViewport = new PhotonViewport(canvas, {photonsHigh: 7, photonsWide: 10, renderDistance: 10, decayTimeout: 1000 / clearsPerSecond / 2})
+    const photonViewport = new PhotonViewport(canvas, {
+        photonsHigh: 7, 
+        photonsWide: 10, 
+        renderDistance: 10, 
+        visualDecayTimeout: 1000 / clearsPerSecond / 2
+    })
 
     function emitPhotons(){
         for (let i = 0; i < photonsPerEmit; i ++){
@@ -77,31 +83,67 @@ function mainLoop() {
         event.stopPropagation()
     }
 
-    function keyPressListener(event: KeyboardEvent){
-        console.log(`Got an event ${event.key}`)
-        // Find the vector for the direction we're moving
-        const direction = keyDirections[event.key]
-        if (direction === undefined){
-            return
+    /**
+     * This function gets called every n ms
+     * and moves the player based on which keys are pressed right now.
+     */
+    function movePlayer(){
+        if (depressedKeys.size >= 1 && depressedKeys.size <= 2){
+            // Find the vector for the direction we're moving
+            const direction: vec3 = [0,0,0]
+            depressedKeys.forEach((key)=>{
+                vec3.add(direction, direction, keyDirections[key])
+            })
+            vec3.normalize(direction, direction)
+
+            const rotationMatrix = makeRotationMatrix(pitch, yaw)
+            const moveDirection = vec3.fromValues(direction[0], direction[1], direction[2])
+            vec3.transformMat3(moveDirection, moveDirection, rotationMatrix)
+            vec3.scale(moveDirection, moveDirection, moveSpeed )
+
+            currentPosition.addVector(moveDirection, (g) => g.isOpaque()) // TODO rotate your pitch and yaw if there was a rotation.
+            positionIndicator.innerText = `Current Position: ${currentPosition.node.initialCoordinates}`
+
+            photonViewport.setLastMoveTime()
         }
 
-        const rotationMatrix = makeRotationMatrix(pitch, yaw)
-        const moveDirection = vec3.fromValues(direction[0], direction[1], direction[2])
-        vec3.transformMat3(moveDirection, moveDirection, rotationMatrix)
-        vec3.scale(moveDirection, moveDirection, moveSpeed )
+        /// TODO NEXT
+        // I need to make movePlayer actually run periodically
+        // I need to test it out.
+    }
 
-        // TODO while the key is pressed, repeat the following: 
+    function keyDownListener(event: KeyboardEvent){
+        if (event.key in keyDirections){
+            depressedKeys.add(event.key)
+            if (depressedKeys.size == 1){
+                startMovePlayerInterval()
+            }
+            event.stopPropagation()
+        }
+    }
 
-        // Add that vector to the current FractionalPosition vector
-
-        currentPosition.addVector(moveDirection, (g) => g.isOpaque()) // TODO rotate your pitch and yaw if there was a rotation.
-        positionIndicator.innerText = `Current Position: ${currentPosition.position.initialCoordinates}`
-
-        photonViewport.setLastMoveTime()
-        event.stopPropagation()
+    function keyUpListener(event: KeyboardEvent){
+        if (event.key in keyDirections){
+            depressedKeys.delete(event.key)
+            event.stopPropagation()
+            if(depressedKeys.size == 0){
+                stopMovePlayerInterval()
+            }
+        }
     }
 
     let photonEmittingInterval: NodeJS.Timer | null = null
+    let movePlayerInterval: NodeJS.Timer | null = null
+    function startMovePlayerInterval(){
+        movePlayerInterval = movePlayerInterval || setInterval(movePlayer, 10)
+    }
+    function stopMovePlayerInterval(){
+        if (movePlayerInterval){
+            clearInterval(movePlayerInterval)
+            movePlayerInterval = null
+        }
+    }
+
 
     /**
      * This function makes the mouse go away, and lets you hit escape to get it back.
@@ -110,17 +152,22 @@ function mainLoop() {
         if (document.pointerLockElement === canvas){
             console.log("Adding listeners")
             canvas.addEventListener('mousemove', mouseMoveListener, true)
-            document.addEventListener('keydown', keyPressListener, true)
+            document.addEventListener('keydown', keyDownListener, true)
+            document.addEventListener('keyup', keyUpListener, true)
+
 
             photonEmittingInterval = photonEmittingInterval || setInterval(emitPhotons, 1000 / (emitsPerClear * clearsPerSecond))
         } else {
             console.log("Removing listeners")
             canvas.removeEventListener('mousemove', mouseMoveListener, true)
-            document.removeEventListener('keydown', keyPressListener, true)
+            document.removeEventListener('keydown', keyDownListener, true)
+            document.removeEventListener('keyup', keyUpListener, true)
+
             if(photonEmittingInterval){
                 clearInterval(photonEmittingInterval)
                 photonEmittingInterval = null
             }
+            stopMovePlayerInterval()
         }
     }
 
