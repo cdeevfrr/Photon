@@ -9,7 +9,19 @@ import { GraphNode } from './GraphNode'
  */
 export type Entity = {
     opaque: boolean,
-    color: Color,
+    draw: ({
+        cxt, 
+        x, 
+        y, 
+        width, 
+        height
+    }:{
+        cxt: CanvasRenderingContext2D, 
+        x: number, 
+        y: number, 
+        width: number, 
+        height: number
+    }) => void
 }
 
 export enum Color{
@@ -19,6 +31,30 @@ export enum Color{
     black = '#000000',
     empty = '#888888', 
     none = '',
+}
+
+/**
+ * Returns a function that can be used as entity.draw
+ * for a solid block of color.
+ * @param c 
+ */
+export function makeDrawFunctionFlatBlock(c: Color){
+    return function draw({
+        cxt, 
+        x, 
+        y, 
+        width, 
+        height
+    }:{
+        cxt: CanvasRenderingContext2D, 
+        x: number, 
+        y: number, 
+        width: number, 
+        height: number
+    }){
+            cxt.fillStyle = c
+            cxt.fillRect(x, y, width, height)
+    }
 }
 
 export interface Block extends Entity{
