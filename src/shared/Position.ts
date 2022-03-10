@@ -32,16 +32,16 @@ const epsilon = 2 ** -50
  * 
  */
 export class Position {
-    position: GraphNode
+    node: GraphNode
     fractionalPosition: vec3
 
     constructor(position: GraphNode, fractionalPosition: vec3){
-        this.position = position
+        this.node = position
         this.fractionalPosition = fractionalPosition
     }
 
     public clone(){
-        return new Position(this.position, vec3.clone(this.fractionalPosition))
+        return new Position(this.node, vec3.clone(this.fractionalPosition))
     }
 
     /**
@@ -91,25 +91,23 @@ export class Position {
 
 
     /**
-     * Add the vector to this position. 
-     * If you need to move to another node, rather than completely adding the whole vector,
-     * get as close as you can & return how much of `vector` still needs to be moved.
+     * Add as much of the vector as you can to currentFractionalPosition, ending on a face.
+     * Return the 
+     *   - direction you should move in, or null if we finished.
+     *   - remaining part of the input vector that you couldn't add, or null.
      * 
-     * The caller should call `moveNode(direction)` and then call `addVector(remainingVector)` to continue.
-     * Aside from dealing with collisions, this is also because a move to a new node might change the 
-     * orientation of the vector, and it's up to another class to keep track of that orientation.
      * @param vector 
      * @returns 
      */
     private addVectorInternal(vector: vec3){
         let minScalar = 1 // if we don't find a better scalar, use up the rest of the vector.
-        let minIndex = -1
-        const faceScalars = [0,1,2].forEach(index => {
+        let minIndex = -1;
+        [0,1,2].forEach(index => {
             // this check prevents division by 0, and happens if something is moving almost in line with one of the cardinal directions.
             if (Math.abs(vector[index]) < epsilon){ 
                 return
             }
-            const targetFace = vector[index] < 0 ? -1 : 1
+            const targetFace = vector[index] < 0 ? 0 : 1
             // What would we have to multiply vector by to hit the face in the "index" direction?
             // Note that scalarForThisIndex is always positive (just try both cases)
             const scalarForThisIndex = (targetFace - this.fractionalPosition[index]) / vector[index]
@@ -124,7 +122,6 @@ export class Position {
         vec3.add(this.fractionalPosition, this.fractionalPosition, allowedMovement);
         if (minIndex == -1){
             return {
-                // TODO don't use nulls for signalling intent.
                 move: null,
                 remainingVectorToAdd: null
             }
@@ -152,11 +149,18 @@ export class Position {
      * @param v 
      * @returns 
      */
-    private moveNode(d: Direction, haltsMovement: (g: GraphNode) => boolean, v: vec3) {
-        const outEdge = this.position.randomOutEdge(d)
+    private moveNode(d: Direction, haltsMovement: (g: GraphNode) => boolean, v: vec3): Collision | {rotatedVector: vec3} {
+        const outEdge = this.node.randomOutEdge(d)
+        if (outEdge == null){
+            return {
+                fromNode: this.node,
+                toNode: null,
+                faceOnFromNode: d,
+            }
+        }
         if (haltsMovement(outEdge.destination)){
             const collision: Collision = {
-                fromNode: this.position,
+                fromNode: this.node,
                 toNode: outEdge.destination,
                 faceOnFromNode: d,
                 faceOnToNode: outEdge.inEdge
@@ -169,7 +173,7 @@ export class Position {
         // update fractionalPosition _before_ doing any possible rotations.
         // EX if we exit via the "up" direction and enter via the "right" direction,
         // we'll want to pretend we exited up & endered down, then rotate.
-        this.fractionalPosition[index] = positive ? -1 : 1
+        this.fractionalPosition[index] = positive ? 0 : 1
         let returnVector = v
         if (outEdge.inEdge && outEdge.inEdge != opposite(d)){
             this.fractionalPosition = rotate(d, outEdge.inEdge, this.fractionalPosition)
@@ -177,7 +181,7 @@ export class Position {
         }
         // In the simple case, just move to that node & reset to the
         // correct face for fractionalPosition.
-        this.position = outEdge.destination
+        this.node = outEdge.destination
         
         return {rotatedVector: returnVector}
     }

@@ -17,7 +17,7 @@ export enum Color{
     green = '#60ff60',
     red = '#ff0000',
     black = '#000000',
-    empty = '#ff0000', // Note that this is red right now.
+    empty = '#888888', 
     none = '',
 }
 
