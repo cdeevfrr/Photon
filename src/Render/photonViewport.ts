@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix'
+import { Cursor } from '../Entities/Cursor'
 import { Photon } from '../Entities/Photon'
 import { Collision } from '../shared/Collision'
 import { GraphNode } from '../shared/GraphNode'
@@ -23,6 +24,8 @@ export class PhotonViewport {
 
     squareLength: number = 0
     squareHeight: number = 0
+
+    cursor: Cursor
 
     // This type could probably be Array<Array<Vector>> instead.
     // Screen space:
@@ -57,6 +60,8 @@ export class PhotonViewport {
         this.photonsWide = photonsWide || this.photonsWide  
         this.renderDistance = renderDistance || this.renderDistance
         this.decayTimeout = decayTimeout || this.decayTimeout
+
+        this.cursor = new Cursor()
 
         this.constructDefaultLines()
 
@@ -118,11 +123,19 @@ export class PhotonViewport {
         }
     }
 
+    public updateCursorLocation(node: GraphNode | null){
+        this.cursor.moveTo(node)
+    }
+
     private emitPhoton(photonx: number, photony: number, pitchDegrees: number, yawDegrees: number, position: Position){
         const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
         const defaultLine = this.defaultLines[photony][photonx]
         const ray = vec3.fromValues(defaultLine[0], defaultLine[1], defaultLine[2])
         vec3.transformMat3(ray, ray, rotationMatrix)
+
+        const isCenterPhoton = 
+          photonx == Math.ceil(this.photonsWide / 2) 
+          && photony ==  Math.ceil(this.photonsHigh / 2)
 
         const viewport = this // avoiding binding issues in the onCollision callbacks.
     
@@ -135,10 +148,18 @@ export class PhotonViewport {
                 } else {
                     viewport.photonFinished(c.toNode, photonx, photony)
                     viewport.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
+                    // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
+                    if (isCenterPhoton){
+                        viewport.updateCursorLocation(c.toNode)
+                    }
                 }
             }, 
             onExpire: (p: Photon) => {
                 viewport.photonFinished(p.position.node, photonx, photony)
+                // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
+                if (isCenterPhoton){
+                    viewport.updateCursorLocation(null)
+                }
             }, 
         })
         emittedPhoton.startTicks(100)
@@ -191,21 +212,31 @@ export class PhotonViewport {
             clearInterval(existingTimer)
         }
 
-        if (g.getContents().length > 0){
-            this.cxt.fillStyle = g.getContents()[0].color
-        } else {
-            this.cxt.fillStyle = Color.empty
+        // BEGIN this should be abstracted into a function
+        for (const entity of g.getContents()){
+            entity.draw({
+                cxt: this.cxt,
+                x: photonx * this.squareLength,
+                y: photony * this.squareHeight, 
+                width: this.squareLength, 
+                height: this.squareHeight
+            })
         }
-        this.cxt.fillRect(
-            photonx * this.squareLength,
-            photony * this.squareHeight, 
-            this.squareLength, 
-            this.squareHeight
-        )
+        if (g.getContents().length == 0){
+            this.cxt.fillStyle = Color.empty
+            this.cxt.fillRect(
+                photonx * this.squareLength,
+                photony * this.squareHeight, 
+                this.squareLength, 
+                this.squareHeight
+            )
+        }
+        
 
         this.cxt.fillStyle = Color.black
         this.cxt.fillText("" + g.initialCoordinates,photonx * this.squareLength,
         photony * this.squareHeight + 20)
+        // END this should be abstracted into a function
 
         this.decayTimers[photonKey] = setTimeout(() => {
             // If the player has been sitting still for 2*delayTimeout, stop fading stuff.

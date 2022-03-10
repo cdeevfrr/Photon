@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { gridOfSize } from '../GraphReading/GraphNodeHelpers'
-import { Block, Color, Direction } from '../shared/shared'
+import { Block, Direction } from '../shared/shared'
 
 
 const tinyGrid = gridOfSize(1)
@@ -10,7 +10,7 @@ test("Photons run their oncollision even if they pass beyond empty space.", ()=>
         blockTypeId: 0,
         blockId: 0,
         opaque: true,
-        color: Color.blue
+        draw: () => false
     }
     tinyGrid.adjacentNodes(Direction.forward)[0].addContents(block)
     // TODO finish this up

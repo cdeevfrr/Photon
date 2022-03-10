@@ -1,5 +1,5 @@
 import { GraphNode } from '../shared/GraphNode';
-import { Block, Color, Direction } from '../shared/shared';
+import { Block, Color, Direction, makeDrawFunctionFlatBlock } from '../shared/shared';
 
 /**
  * GridFormatGraph (gfg) file:
@@ -130,7 +130,7 @@ function makeNode(char: string, { x, y, z }: { x: number, y: number, z: number }
                 blockTypeId: 0,
                 blockId: 0,
                 opaque: true,
-                color: Color.blue
+                draw: makeDrawFunctionFlatBlock(Color.blue)
             }
             result.addContents(blueBlock)
             break;
@@ -139,7 +139,7 @@ function makeNode(char: string, { x, y, z }: { x: number, y: number, z: number }
                 blockTypeId: 0,
                 blockId: 0,
                 opaque: true,
-                color: Color.green
+                draw: makeDrawFunctionFlatBlock(Color.green)
             }
             result.addContents(greenBlock)
             break;
