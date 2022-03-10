@@ -13,7 +13,7 @@ export class PhotonViewport {
     // if the player were at [0,0,0] facing [0,0,-1].
     photonsHigh = 5
     photonsWide = 5
-    renderDistance = 12
+    renderDistance = 7
 
     decayTimeout = 1000
     lastMoveTime = Date.now()
@@ -91,6 +91,18 @@ export class PhotonViewport {
         this.cxt.globalAlpha = 1
     }
 
+    public fadeDistance(p: Photon, photonx: number, photony: number){
+        this.cxt.globalAlpha = p.distanceTravelled / p.maxDistance
+        this.cxt.fillStyle = Color.empty
+        this.cxt.fillRect(
+            photonx * this.squareLength,
+            photony * this.squareHeight,
+            this.squareLength,
+            this.squareHeight
+            )
+        this.cxt.globalAlpha = 1
+    }
+
     private constructDefaultLines(){
         this.defaultLines = []
         for(let y = 0; y < this.photonsHigh; y ++){
@@ -117,11 +129,12 @@ export class PhotonViewport {
         const emittedPhoton = new Photon({
             position: position.clone(), 
             direction: ray, 
-            onCollision: (c: Collision) => {
+            onCollision: (c: Collision, p: Photon) => {
                 if (c.toNode == null){
                     viewport.photonLeftGraph(photonx, photony)
                 } else {
                     viewport.photonFinished(c.toNode, photonx, photony)
+                    viewport.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
                 }
             }, 
             onExpire: (p: Photon) => {

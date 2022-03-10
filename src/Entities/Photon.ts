@@ -14,7 +14,7 @@ const photonSpeed = 3
  *    if photonSpeed=2 defaultMaxDistance=2.1 the photon will do 2 ticks, traveling 4.
  * 
  */
-const defaultMaxDistance = 6
+const defaultMaxDistance = 9
 
 
 /**
@@ -25,7 +25,7 @@ const defaultMaxDistance = 6
 export class Photon {
     position: Position
     TickVector: vec3
-    onCollision: (collision: Collision)=> void
+    onCollision: (collision: Collision, p: Photon)=> void
     onExpire: (p: Photon) => void
     distanceTravelled: number
     maxDistance: number
@@ -44,7 +44,7 @@ export class Photon {
      */
     constructor({
         position, direction, onCollision, onExpire, maxDistance = defaultMaxDistance
-    }:{position: Position, direction: vec3, onCollision: (collision: Collision)=> void, onExpire: (p: Photon) => void , maxDistance?: number}){
+    }:{position: Position, direction: vec3, onCollision: (collision: Collision, p: Photon)=> void, onExpire: (p: Photon) => void , maxDistance?: number}){
         this.position = position
         this.onCollision = onCollision
         this.onExpire = onExpire
@@ -98,7 +98,7 @@ export class Photon {
             // If collision is not null, neither will remainingToAdd be.
             this.distanceTravelled += vec3.distance(remainingToAdd!, this.TickVector)
             this.stopTicks()
-            this.onCollision(collision)
+            this.onCollision(collision, this)
 
             // TODO it's possible that you could be way behind, and the 
             // interval stacks 5 calls to tick() onto the event loop, 
