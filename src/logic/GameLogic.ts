@@ -1,6 +1,6 @@
 import { GraphNode } from "../shared/GraphNode"
 import { Direction, Block, Color } from "../shared/shared"
-import { canvasId, mapId, positionElementId } from "../commonIds"
+import { canvasId, positionElementId } from "../commonIds"
 import { makeRotationMatrix } from "../Render/RotationMatrix"
 import { vec3 } from "gl-matrix"
 import { gridOfSize } from "../GraphReading/GraphNodeHelpers"
@@ -47,13 +47,7 @@ const emitsPerClear = 10
 const photonsPerEmit = 10
 
 async function mainLoop() {
-
-    let mapElement = document.getElementById(mapId)
-    while (!mapElement){
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        mapElement = document.getElementById(mapId)
-    }
-    const mapData = mapElement.getAttribute("data")
+    const mapData = await (await fetch('/playgroundMap2')).text()
 
     if (!mapData){
         throw new Error("Didn't get map data from the webpage!")
