@@ -4,7 +4,7 @@ import { Photon, PhotonEndListener, PhotonHash } from '../Entities/Photon'
 import { Collision } from '../shared/Collision'
 import { GraphNode } from '../shared/GraphNode'
 import { Position } from '../shared/Position'
-import { Color } from '../shared/shared'
+import { Color, Direction } from '../shared/shared'
 import { makeRotationMatrix } from './RotationMatrix'
 
 export class PhotonViewport implements PhotonEndListener {
@@ -143,6 +143,9 @@ export class PhotonViewport implements PhotonEndListener {
 
     // Implement photonEnd listener functions 
 
+    // TODO Remove onExpire and just let photons do an onCollision with 
+    // toNode: null. This has to be handled anyway if a node has no out-edge
+    // in the direction the photon wants to travel.
     /**
      * 
      * @param entity 
@@ -150,7 +153,10 @@ export class PhotonViewport implements PhotonEndListener {
     public onExpire(p: Photon) {
         const {x: photonx, y: photony} = this.photonLocations[p.photonHash()]
 
-        this.photonFinished(p.position.node, photonx, photony)
+        this.photonFinished({
+            g: p.position.node, 
+            photonx, 
+            photony})
         // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
         if (this.isCenterPhoton(photonx, photony)){
             this.updateCursorLocation(null)
@@ -166,7 +172,12 @@ export class PhotonViewport implements PhotonEndListener {
         if (c.toNode == null){
             this.photonLeftGraph(photonx, photony)
         } else {
-            this.photonFinished(c.toNode, photonx, photony)
+            this.photonFinished({
+                g: c.toNode, 
+                photonx, 
+                photony, 
+                faceOnToNode: c.faceOnToNode,
+            })
             this.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
             // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
             if (this.isCenterPhoton(photonx, photony)){
@@ -250,7 +261,9 @@ export class PhotonViewport implements PhotonEndListener {
         )
     }
 
-    photonFinished(g: GraphNode, photonx: number, photony: number){
+    photonFinished({g, photonx, photony, faceOnToNode}:
+        {g: GraphNode, photonx: number, photony: number, faceOnToNode?: Direction}){
+
         const photonKey = photonx + this.photonsWide * photony
         const existingTimer = this.decayTimers[photonKey]
         if(existingTimer){
@@ -264,7 +277,8 @@ export class PhotonViewport implements PhotonEndListener {
                 x: photonx * this.squareLength,
                 y: photony * this.squareHeight, 
                 width: this.squareLength, 
-                height: this.squareHeight
+                height: this.squareHeight,
+                drawingFace: faceOnToNode,
             })
         }
         if (g.getContents().length == 0){
