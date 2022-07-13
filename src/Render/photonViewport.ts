@@ -1,13 +1,13 @@
 import { vec3 } from 'gl-matrix'
 import { Cursor } from '../Entities/Cursor'
-import { Photon } from '../Entities/Photon'
+import { Photon, PhotonEndListener, PhotonHash } from '../Entities/Photon'
 import { Collision } from '../shared/Collision'
 import { GraphNode } from '../shared/GraphNode'
 import { Position } from '../shared/Position'
 import { Color } from '../shared/shared'
 import { makeRotationMatrix } from './RotationMatrix'
 
-export class PhotonViewport {
+export class PhotonViewport implements PhotonEndListener {
     // The screen will represent an array of nodes, from 
     // at the top left [-photonsWide / 2, photonsHigh / 2, -renderDistance] in model space, [0,0] on the screen
     // to the bottom right at  [photonsWide / 2, -photonsHigh / 2, -renderDistance] in model space, [photonsWide, photonsHigh] on the screen
@@ -15,6 +15,10 @@ export class PhotonViewport {
     photonsHigh = 5
     photonsWide = 5
     renderDistance = 7
+
+    // This will keep track of the screen x&y positions for all emitted photons.
+    // If there's a collision then we'll end up updating the same pixel twice, seems acceptable.
+    photonLocations: {[key: PhotonHash]: {x: number, y: number}}= {}
 
     decayTimeout = 1000
     lastMoveTime = Date.now()
@@ -127,6 +131,44 @@ export class PhotonViewport {
         this.cursor.moveTo(node)
     }
 
+    private isCenterPhoton(photonx: number, photony: number){
+        return photonx == Math.ceil(this.photonsWide / 2) 
+          && photony ==  Math.ceil(this.photonsHigh / 2)
+    }
+
+    // Implement photonEnd listener functions 
+
+    /**
+     * 
+     * @param entity 
+     */
+    public onExpire(p: Photon) {
+        const {x: photonx, y: photony} = this.photonLocations[p.photonHash()]
+
+        this.photonFinished(p.position.node, photonx, photony)
+        // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
+        if (this.isCenterPhoton(photonx, photony)){
+            this.updateCursorLocation(null)
+        }
+        delete this.photonLocations[p.photonHash()]
+    }
+
+    public onCollision (p: Photon, c: Collision){
+        const {x: photonx, y: photony} = this.photonLocations[p.photonHash()]
+
+        if (c.toNode == null){
+            this.photonLeftGraph(photonx, photony)
+        } else {
+            this.photonFinished(c.toNode, photonx, photony)
+            this.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
+            // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
+            if (this.isCenterPhoton(photonx, photony)){
+                this.updateCursorLocation(c.toNode)
+            }
+        }
+        delete this.photonLocations[p.photonHash()]
+    }
+
     private emitPhoton(photonx: number, photony: number, pitchDegrees: number, yawDegrees: number, position: Position){
         const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
         const defaultLine = this.defaultLines[photony][photonx]
@@ -142,27 +184,11 @@ export class PhotonViewport {
         const emittedPhoton = new Photon({
             position: position.clone(), 
             direction: ray, 
-            onCollision: (c: Collision, p: Photon) => {
-                if (c.toNode == null){
-                    viewport.photonLeftGraph(photonx, photony)
-                } else {
-                    viewport.photonFinished(c.toNode, photonx, photony)
-                    viewport.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
-                    // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
-                    if (isCenterPhoton){
-                        viewport.updateCursorLocation(c.toNode)
-                    }
-                }
-            }, 
-            onExpire: (p: Photon) => {
-                viewport.photonFinished(p.position.node, photonx, photony)
-                // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
-                if (isCenterPhoton){
-                    viewport.updateCursorLocation(null)
-                }
-            }, 
         })
-        emittedPhoton.startTicks(100)
+
+        emittedPhoton.addEndListener(this)
+
+        this.photonLocations[emittedPhoton.photonHash()] = {x: photonx, y: photony}
     }
 
     emitNextPhoton(pitchDegrees: number, yawDegrees: number, position: Position){
