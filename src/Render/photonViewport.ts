@@ -29,6 +29,9 @@ export class PhotonViewport implements PhotonEndListener {
     squareLength: number = 0
     squareHeight: number = 0
 
+    photonsTickedByThisViewport: Set<Photon>
+    photonTickingInterval: NodeJS.Timer
+
     cursor: Cursor
 
     // This type could probably be Array<Array<Vector>> instead.
@@ -64,6 +67,8 @@ export class PhotonViewport implements PhotonEndListener {
         this.photonsWide = photonsWide || this.photonsWide  
         this.renderDistance = renderDistance || this.renderDistance
         this.decayTimeout = decayTimeout || this.decayTimeout
+        this.photonsTickedByThisViewport = new Set()
+        this.photonTickingInterval = setInterval(() => this.tickAllPhotons(), 100)
 
         this.cursor = new Cursor()
 
@@ -151,6 +156,8 @@ export class PhotonViewport implements PhotonEndListener {
             this.updateCursorLocation(null)
         }
         delete this.photonLocations[p.photonHash()]
+        this.photonsTickedByThisViewport.delete(p)
+
     }
 
     public onCollision (p: Photon, c: Collision){
@@ -167,6 +174,8 @@ export class PhotonViewport implements PhotonEndListener {
             }
         }
         delete this.photonLocations[p.photonHash()]
+        this.photonsTickedByThisViewport.delete(p)
+
     }
 
     private emitPhoton(photonx: number, photony: number, pitchDegrees: number, yawDegrees: number, position: Position){
@@ -174,12 +183,6 @@ export class PhotonViewport implements PhotonEndListener {
         const defaultLine = this.defaultLines[photony][photonx]
         const ray = vec3.fromValues(defaultLine[0], defaultLine[1], defaultLine[2])
         vec3.transformMat3(ray, ray, rotationMatrix)
-
-        const isCenterPhoton = 
-          photonx == Math.ceil(this.photonsWide / 2) 
-          && photony ==  Math.ceil(this.photonsHigh / 2)
-
-        const viewport = this // avoiding binding issues in the onCollision callbacks.
     
         const emittedPhoton = new Photon({
             position: position.clone(), 
@@ -189,6 +192,22 @@ export class PhotonViewport implements PhotonEndListener {
         emittedPhoton.addEndListener(this)
 
         this.photonLocations[emittedPhoton.photonHash()] = {x: photonx, y: photony}
+
+        // Photons normally tick themselves, but the viewport has
+        // to create so many photons that it's worth it to use a single 
+        // interval rather than creating & removing length*width intervals 
+        // every tenth of a second. Testing showed that interval creation time
+        // was exceeding photon traversal time.
+        // 
+        // This also has the nice side effect of allowing vision photons
+        // to move at a different speed from normal photons, if someone wants.
+        // 
+        // emittedPhoton.startTicks(100)
+        this.photonsTickedByThisViewport.add(emittedPhoton)
+    }
+
+    public tickAllPhotons(){
+        this.photonsTickedByThisViewport.forEach(p => p.tick())
     }
 
     emitNextPhoton(pitchDegrees: number, yawDegrees: number, position: Position){
