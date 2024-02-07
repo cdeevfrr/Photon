@@ -61,6 +61,11 @@ export class PhotonViewport implements PhotonEndListener {
         photonsHigh?: number, 
         photonsWide?: number, 
         renderDistance?: number,
+        /**
+         * The time until the decay effect stops rendering.
+         * The normal decay effect makes squares greyed out
+         * if a photon hasn't updated that square for a while.
+         */
         visualDecayTimeout?: number
     }){
         this.photonsHigh = photonsHigh || this.photonsHigh 

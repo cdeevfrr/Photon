@@ -1,5 +1,5 @@
 
-# Spawn
+# Photon
 A video game.
 
 # Name is actually TBD, spawn is reserved for somethign else.
