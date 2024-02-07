@@ -1,13 +1,13 @@
 import { vec3 } from 'gl-matrix'
 import { Cursor } from '../Entities/Cursor'
-import { Photon } from '../Entities/Photon'
+import { Photon, PhotonEndListener, PhotonHash } from '../Entities/Photon'
 import { Collision } from '../shared/Collision'
 import { GraphNode } from '../shared/GraphNode'
 import { Position } from '../shared/Position'
-import { Color } from '../shared/shared'
+import { Color, Direction } from '../shared/shared'
 import { makeRotationMatrix } from './RotationMatrix'
 
-export class PhotonViewport {
+export class PhotonViewport implements PhotonEndListener {
     // The screen will represent an array of nodes, from 
     // at the top left [-photonsWide / 2, photonsHigh / 2, -renderDistance] in model space, [0,0] on the screen
     // to the bottom right at  [photonsWide / 2, -photonsHigh / 2, -renderDistance] in model space, [photonsWide, photonsHigh] on the screen
@@ -15,6 +15,10 @@ export class PhotonViewport {
     photonsHigh = 5
     photonsWide = 5
     renderDistance = 7
+
+    // This will keep track of the screen x&y positions for all emitted photons.
+    // If there's a collision then we'll end up updating the same pixel twice, seems acceptable.
+    photonLocations: {[key: PhotonHash]: {x: number, y: number}}= {}
 
     decayTimeout = 1000
     lastMoveTime = Date.now()
@@ -24,6 +28,9 @@ export class PhotonViewport {
 
     squareLength: number = 0
     squareHeight: number = 0
+
+    photonsTickedByThisViewport: Set<Photon>
+    photonTickingInterval: NodeJS.Timer
 
     cursor: Cursor
 
@@ -60,6 +67,8 @@ export class PhotonViewport {
         this.photonsWide = photonsWide || this.photonsWide  
         this.renderDistance = renderDistance || this.renderDistance
         this.decayTimeout = decayTimeout || this.decayTimeout
+        this.photonsTickedByThisViewport = new Set()
+        this.photonTickingInterval = setInterval(() => this.tickAllPhotons(), 100)
 
         this.cursor = new Cursor()
 
@@ -127,42 +136,89 @@ export class PhotonViewport {
         this.cursor.moveTo(node)
     }
 
+    private isCenterPhoton(photonx: number, photony: number){
+        return photonx == Math.ceil(this.photonsWide / 2) 
+          && photony ==  Math.ceil(this.photonsHigh / 2)
+    }
+
+    // Implement photonEnd listener functions 
+
+    // TODO Remove onExpire and just let photons do an onCollision with 
+    // toNode: null. This has to be handled anyway if a node has no out-edge
+    // in the direction the photon wants to travel.
+    /**
+     * 
+     * @param entity 
+     */
+    public onExpire(p: Photon) {
+        const {x: photonx, y: photony} = this.photonLocations[p.photonHash()]
+
+        this.photonFinished({
+            g: p.position.node, 
+            photonx, 
+            photony})
+        // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
+        if (this.isCenterPhoton(photonx, photony)){
+            this.updateCursorLocation(null)
+        }
+        delete this.photonLocations[p.photonHash()]
+        this.photonsTickedByThisViewport.delete(p)
+
+    }
+
+    public onCollision (p: Photon, c: Collision){
+        const {x: photonx, y: photony} = this.photonLocations[p.photonHash()]
+
+        if (c.toNode == null){
+            this.photonLeftGraph(photonx, photony)
+        } else {
+            this.photonFinished({
+                g: c.toNode, 
+                photonx, 
+                photony, 
+                faceOnToNode: c.faceOnToNode,
+            })
+            this.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
+            // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
+            if (this.isCenterPhoton(photonx, photony)){
+                this.updateCursorLocation(c.toNode)
+            }
+        }
+        delete this.photonLocations[p.photonHash()]
+        this.photonsTickedByThisViewport.delete(p)
+
+    }
+
     private emitPhoton(photonx: number, photony: number, pitchDegrees: number, yawDegrees: number, position: Position){
         const rotationMatrix = makeRotationMatrix(pitchDegrees, yawDegrees)
         const defaultLine = this.defaultLines[photony][photonx]
         const ray = vec3.fromValues(defaultLine[0], defaultLine[1], defaultLine[2])
         vec3.transformMat3(ray, ray, rotationMatrix)
-
-        const isCenterPhoton = 
-          photonx == Math.ceil(this.photonsWide / 2) 
-          && photony ==  Math.ceil(this.photonsHigh / 2)
-
-        const viewport = this // avoiding binding issues in the onCollision callbacks.
     
         const emittedPhoton = new Photon({
             position: position.clone(), 
             direction: ray, 
-            onCollision: (c: Collision, p: Photon) => {
-                if (c.toNode == null){
-                    viewport.photonLeftGraph(photonx, photony)
-                } else {
-                    viewport.photonFinished(c.toNode, photonx, photony)
-                    viewport.fadeDistance(p, photonx, photony) // TODO combine with previous call so that we only call cxt once.
-                    // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
-                    if (isCenterPhoton){
-                        viewport.updateCursorLocation(c.toNode)
-                    }
-                }
-            }, 
-            onExpire: (p: Photon) => {
-                viewport.photonFinished(p.position.node, photonx, photony)
-                // TODO This check doesn't need to be done for every collision. Pass in a different onCollision instead.
-                if (isCenterPhoton){
-                    viewport.updateCursorLocation(null)
-                }
-            }, 
         })
-        emittedPhoton.startTicks(100)
+
+        emittedPhoton.addEndListener(this)
+
+        this.photonLocations[emittedPhoton.photonHash()] = {x: photonx, y: photony}
+
+        // Photons normally tick themselves, but the viewport has
+        // to create so many photons that it's worth it to use a single 
+        // interval rather than creating & removing length*width intervals 
+        // every tenth of a second. Testing showed that interval creation time
+        // was exceeding photon traversal time.
+        // 
+        // This also has the nice side effect of allowing vision photons
+        // to move at a different speed from normal photons, if someone wants.
+        // 
+        // emittedPhoton.startTicks(100)
+        this.photonsTickedByThisViewport.add(emittedPhoton)
+    }
+
+    public tickAllPhotons(){
+        this.photonsTickedByThisViewport.forEach(p => p.tick())
     }
 
     emitNextPhoton(pitchDegrees: number, yawDegrees: number, position: Position){
@@ -205,7 +261,9 @@ export class PhotonViewport {
         )
     }
 
-    photonFinished(g: GraphNode, photonx: number, photony: number){
+    photonFinished({g, photonx, photony, faceOnToNode}:
+        {g: GraphNode, photonx: number, photony: number, faceOnToNode?: Direction}){
+
         const photonKey = photonx + this.photonsWide * photony
         const existingTimer = this.decayTimers[photonKey]
         if(existingTimer){
@@ -219,7 +277,8 @@ export class PhotonViewport {
                 x: photonx * this.squareLength,
                 y: photony * this.squareHeight, 
                 width: this.squareLength, 
-                height: this.squareHeight
+                height: this.squareHeight,
+                drawingFace: faceOnToNode,
             })
         }
         if (g.getContents().length == 0){

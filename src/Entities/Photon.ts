@@ -3,6 +3,8 @@ import { Collision } from "../shared/Collision";
 import { Position } from "../shared/Position";
 import { Color } from "../shared/shared";
 
+export type PhotonHash = string
+
 /**
  * How many euclidian units per second a photon can move.
  */
@@ -25,11 +27,12 @@ const defaultMaxDistance = 9
 export class Photon {
     position: Position
     TickVector: vec3
-    onCollision: (collision: Collision, p: Photon)=> void
-    onExpire: (p: Photon) => void
     distanceTravelled: number
     maxDistance: number
     interval?: NodeJS.Timer
+
+    hash: PhotonHash = Math.random().toString()
+    endListeners: Set<PhotonEndListener> = new Set()
 
     opaque = false
     color = Color.none;
@@ -43,11 +46,9 @@ export class Photon {
      * @param onExpire What to do if this photon has travelled max distance without hitting anything.
      */
     constructor({
-        position, direction, onCollision, onExpire, maxDistance = defaultMaxDistance
-    }:{position: Position, direction: vec3, onCollision: (collision: Collision, p: Photon)=> void, onExpire: (p: Photon) => void , maxDistance?: number}){
+        position, direction, maxDistance = defaultMaxDistance
+    }:{position: Position, direction: vec3, maxDistance?: number}){
         this.position = position
-        this.onCollision = onCollision
-        this.onExpire = onExpire
         this.distanceTravelled = 0
         this.maxDistance = maxDistance
 
@@ -98,7 +99,7 @@ export class Photon {
             // If collision is not null, neither will remainingToAdd be.
             this.distanceTravelled += vec3.distance(remainingToAdd!, this.TickVector)
             this.stopTicks()
-            this.onCollision(collision, this)
+            this.endListeners.forEach(e => e.onCollision(this, collision))
 
             // TODO it's possible that you could be way behind, and the 
             // interval stacks 5 calls to tick() onto the event loop, 
@@ -110,7 +111,7 @@ export class Photon {
             this.TickVector = this.rescaleToPhotonSpeed(lastAdded!)
             if (this.distanceTravelled >= this.maxDistance){
                 this.stopTicks()
-                this.onExpire(this)
+                this.endListeners.forEach(e => e.onExpire(this))
             }
         }
     }
@@ -121,4 +122,17 @@ export class Photon {
         vec3.scale(result, result, photonSpeed)
         return result
     }
+
+    public photonHash(): PhotonHash{
+        return this.hash
+    }
+
+    public addEndListener(e: PhotonEndListener){
+        this.endListeners.add(e)
+    }
+}
+
+export interface PhotonEndListener {
+    onCollision: (p: Photon, c: Collision) => void
+    onExpire: (p: Photon) => void
 }

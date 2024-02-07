@@ -66,8 +66,8 @@ export class GraphNode{
      * @param othersInDirection 
      */
     addSymmetricAdjacency(outDirection: Direction, other: GraphNode): void{
-        this.outEdges[outDirection].push({destination: other})
-        other.outEdges[opposite(outDirection)].push({destination: this})
+        this.outEdges[outDirection].push({destination: other, inEdge: opposite(outDirection)})
+        other.outEdges[opposite(outDirection)].push({destination: this, inEdge: outDirection})
     }
 
     // TODO entities should only be able to exist in one node at a time.
