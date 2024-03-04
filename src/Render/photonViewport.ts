@@ -8,10 +8,15 @@ import { Color, Direction } from '../shared/shared'
 import { makeRotationMatrix } from './RotationMatrix'
 
 export class PhotonViewport implements PhotonEndListener {
-    // The screen will represent an array of nodes, from 
+    // Imagine a player looking at a wall of different color blocks.
+    // The screen will represent an array of such blocks, from 
     // at the top left [-photonsWide / 2, photonsHigh / 2, -renderDistance] in model space, [0,0] on the screen
     // to the bottom right at  [photonsWide / 2, -photonsHigh / 2, -renderDistance] in model space, [photonsWide, photonsHigh] on the screen
     // if the player were at [0,0,0] facing [0,0,-1].
+    // (By convention, a player on the ground moves on the x and z planes; y is up.)
+    // The "wall of blocks" is just to get you oriented.
+    // In reality, we'll send out one photon towards the center of each block from the player.
+    // Whatever the photon hits, the correct color is shown on the screen.
     photonsHigh = 5
     photonsWide = 5
     renderDistance = 7

@@ -100,6 +100,8 @@ export type GraphEdge = {
     inEdge?: Direction
 }
 
+// See graphNode for an explanation of what Directions are. 
+// It's nonintuitive.
 export enum Direction {
     forward = 'f',
     backward = 'b',

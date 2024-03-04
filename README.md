@@ -2,7 +2,6 @@
 # Photon
 A video game.
 
-# Name is actually TBD, spawn is reserved for somethign else.
 ### Description
 The interesting point of this game is that it _looks_ like a 3D world, but it's not actually 3D. Instead, there's a grid/matrix/graph of nodes and edges, but they just start out as a 3D matrix of adjacencies. The point of the game is to modify which nodes are adjacent to which other nodes to create new things.
 
@@ -20,6 +19,14 @@ Vision is a really tricky question in this game. For now I'm using ray tracing -
 
 ## Developing
 This repo is ABSOLUTELY in its infancy. There's a ton to develop & it's not setup for onboarding new people yet - please email or message me (cdeevfrr) directly if you want to contribute!
+
+At the moment, it's setup like this:
+
+- It's a react app for no reason. index.js just creates a react component with a canvas HTML element, and then runs `mainLoop` which looks for a canvas element with the correct ID.
+- The main loop registers / unregisters keyboard listeners. Right now the rendering & ticks are tied to player actions, there's no background model yet (eg, no ticks, no background world time).
+- The entire world model consists of a map, and a player location. Photons are not maintained in a world model - they have a current node, and a javascript interval making them update.
+- The conceptual stuff is in the Shared folder. Read the comments on GraphNode and Position to get a sense for how the physics works. 
+- If something wants momentum or acceleration, it should keep track of that itself & use Position.addVector periodically (rather than relying on a global tick clock). This means the game will play differently for different computers (since different entities may update themselves at different speeds based on performance of the event loop).
 
 
 # Stuff added by create-react-app

@@ -5,11 +5,13 @@ import {vec3} from 'gl-matrix'
  * Graph nodes are the atomic unit of space in this world.
  * Things move, not in euclidian space, but instead between graph nodes.
  * 
- * There is no 'space' 'inside' a graph node. You might think that each node is a 1X1X1 box, but that's not how the physics works. Instead, the node is rendered based on all the contents it has. It might look different based on which face a photon enters from, but the angle of entry, depth of entry, lighting, and so on have no effect on the visual appearance of a node. Any appearance of a 3D world has to come from large scale, and photons just happening to travel (discretely) between nodes as if they were 1X1X1 (continuous) boxes. 
+ * There is no 'space' 'inside' a graph node. You might think that each node is a 1X1X1 box, but that's not how the physics works. Instead, from outside, each node is rendered based on all the contents it has. It might look different based on which face a photon enters from, but the angle of entry, depth of entry, lighting, and so on have no effect on the visual appearance of a node. Any appearance of a 3D world has to come from large scale, and photons just happening to travel (discretely) between nodes as if they were 1X1X1 (continuous) boxes. 
  * 
- * Graph nodes connect to other graph nodes via the 6 cardinal directions.
+ * Graph nodes connect to other graph nodes via the 6 cardinal directions. (In 3d, they'd be up down left right forward backward. Now, each node just gets 6 out edges. In 3d world, going up from one spot puts you on the down of the next spot; not required here.)
  * 
- * Note that "nodes" are distinct from "blocks". Blocks are entities that are usually non-moving, usually opaque, and are contained in nodes.
+ * Note that "nodes" are distinct from "blocks". Blocks are entities that are usually non-moving, usually opaque, and are contained in nodes. Blocks typically take over how a photon behaves when it collides with that node (opaque). Other kinds of entities might not take over, they might change behavior.
+ * 
+ * See Position.ts::addVector for how things move in this world.
  * 
  */
 export class GraphNode{
